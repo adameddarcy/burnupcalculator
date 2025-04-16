@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { ProcessedData, AssigneeMetrics } from '@/types/jira';
+import { ProcessedData } from '@/types/jira';
 
 /**
  * Adds summary metrics to the PDF report
@@ -80,16 +80,18 @@ const addFunFactsToPdf = (
   // Find the week with the most completed points
   const weeklyCompletion = findWeekWithMostPoints(processedData);
   if (weeklyCompletion) {
-    doc.text(`Most productive week: ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)}`, margin, yPos);
+    doc.text(`🚀 Wow! During the week of ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)},`, margin, yPos);
     yPos += 5;
-    doc.text(`   ${weeklyCompletion.points} points completed!`, margin, yPos);
+    doc.text(`   the team crushed it with ${weeklyCompletion.points} story points! 🎉`, margin, yPos);
     yPos += 8;
   }
   
-  // Calculate average time from "in progress" to completion
+  // Add a fun fact about cycle time if possible
   const avgCycleTime = calculateAverageTimeToCompletion(processedData.issues);
   if (avgCycleTime > 0) {
-    doc.text(`Average time to complete an issue: ${avgCycleTime.toFixed(1)} days`, margin, yPos);
+    doc.text(`⚡ Quick movers! The team typically transforms issues from`, margin, yPos);
+    yPos += 5;
+    doc.text(`   "in progress" to "done" in just ${avgCycleTime.toFixed(1)} days. Speed demon mode! 💨`, margin, yPos);
     yPos += 8;
   }
   
