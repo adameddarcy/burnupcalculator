@@ -10,6 +10,13 @@ export interface JiraIssue {
   epic?: string;
   assignee?: string;
   description?: string;
+  statusChanges?: StatusChange[];
+}
+
+export interface StatusChange {
+  date: string;
+  fromStatus: string;
+  toStatus: string;
 }
 
 // Modified ChartData to align with Chart.js expected format
