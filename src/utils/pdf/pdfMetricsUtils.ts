@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { ProcessedData, AssigneeMetrics } from '@/types/jira';
 
@@ -13,38 +12,47 @@ export const addSummaryMetricsToPdf = (
   yPos: number
 ): number => {
   doc.setFontSize(16);
-  doc.text('Summary Metrics', margin, yPos);
+  doc.text('📊 Summary Metrics', margin, yPos);
   yPos += 10;
   
   doc.setFontSize(12);
-  doc.text(`Total Story Points: ${processedData.totalPoints}`, margin, yPos);
+  doc.text(`📝 Total Story Points: ${processedData.totalPoints}`, margin, yPos);
   yPos += 7;
   
-  doc.text(`Completed Points: ${processedData.completedPoints}`, margin, yPos);
+  doc.text(`✅ Completed Points: ${processedData.completedPoints}`, margin, yPos);
   yPos += 7;
   
-  doc.text(`Completion: ${Math.round((processedData.completedPoints / processedData.totalPoints) * 100)}%`, margin, yPos);
+  doc.text(`🎯 Completion: ${Math.round((processedData.completedPoints / processedData.totalPoints) * 100)}%`, margin, yPos);
   yPos += 7;
   
-  doc.text(`Total Issues: ${processedData.issues.length}`, margin, yPos);
+  doc.text(`🔢 Total Issues: ${processedData.issues.length}`, margin, yPos);
   yPos += 7;
   
   const effectiveTeamMembers = customTeamMembers !== null 
     ? customTeamMembers
     : processedData?.totalAssignees || 0;
   
-  doc.text(`Team Members: ${effectiveTeamMembers}`, margin, yPos);
+  doc.text(`👥 Team Members: ${effectiveTeamMembers}`, margin, yPos);
   yPos += 7;
 
   if (processedData.velocity) {
-    doc.text(`Team Velocity: ${processedData.velocity.toFixed(1)} points/day`, margin, yPos);
+    doc.text(`🚀 Team Velocity: ${processedData.velocity.toFixed(1)} points/day`, margin, yPos);
     yPos += 7;
   }
 
   if (processedData.projectedCompletionDate) {
-    doc.text(`Projected Completion: ${processedData.projectedCompletionDate.toLocaleDateString()}`, margin, yPos);
+    const today = new Date();
+    const daysToCompletion = Math.ceil((processedData.projectedCompletionDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    doc.text(`📅 Projected Completion: ${processedData.projectedCompletionDate.toLocaleDateString()}`, margin, yPos);
+    yPos += 7;
+    
+    doc.text(`⏱️ Days until completion: ${daysToCompletion > 0 ? daysToCompletion : 'Overdue!'}`, margin, yPos);
     yPos += 7;
   }
+  
+  // Add fun facts section
+  yPos = addFunFactsToPdf(doc, processedData, margin, yPos);
   
   // Add horizontal line
   doc.setDrawColor(200, 200, 200);
@@ -52,6 +60,133 @@ export const addSummaryMetricsToPdf = (
   yPos += 10;
 
   return yPos;
+};
+
+/**
+ * Adds fun facts section to the PDF report
+ */
+const addFunFactsToPdf = (
+  doc: jsPDF,
+  processedData: ProcessedData,
+  margin: number,
+  yPos: number
+): number => {
+  doc.setFontSize(14);
+  doc.text("✨ Fun Facts", margin, yPos);
+  yPos += 8;
+  
+  doc.setFontSize(10);
+  
+  // Find the week with the most completed points
+  const weeklyCompletion = findWeekWithMostPoints(processedData);
+  if (weeklyCompletion) {
+    doc.text(`🏆 Most productive week: ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)}`, margin, yPos);
+    yPos += 5;
+    doc.text(`   ${weeklyCompletion.points} points completed!`, margin, yPos);
+    yPos += 8;
+  }
+  
+  // Find the most productive team member
+  const mostProductiveAssignee = findMostProductiveAssignee(processedData.assigneeData);
+  if (mostProductiveAssignee) {
+    doc.text(`🌟 MVP: ${mostProductiveAssignee.name} with ${mostProductiveAssignee.completedPoints} points completed`, margin, yPos);
+    yPos += 8;
+  }
+  
+  // Calculate average cycle time
+  if (processedData.issues.length > 0 && processedData.issues.some(issue => issue.resolved)) {
+    const avgCycleTime = calculateAverageCycleTime(processedData.issues);
+    doc.text(`⏱️ Average time to complete an issue: ${avgCycleTime.toFixed(1)} days`, margin, yPos);
+    yPos += 8;
+  }
+  
+  return yPos;
+};
+
+/**
+ * Finds the week with the most completed points
+ */
+const findWeekWithMostPoints = (processedData: ProcessedData): { weekStart: Date; weekEnd: Date; points: number } | null => {
+  const resolvedIssues = processedData.issues.filter(issue => issue.resolved);
+  if (resolvedIssues.length === 0) return null;
+  
+  // Group by week
+  const weekMap = new Map<string, { points: number; weekStart: Date; weekEnd: Date }>();
+  
+  resolvedIssues.forEach(issue => {
+    if (!issue.resolved) return;
+    
+    const resolvedDate = new Date(issue.resolved);
+    const weekStart = new Date(resolvedDate);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Go to start of week (Sunday)
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6); // End of week (Saturday)
+    weekEnd.setHours(23, 59, 59, 999);
+    
+    const weekKey = weekStart.toISOString();
+    
+    if (!weekMap.has(weekKey)) {
+      weekMap.set(weekKey, { points: 0, weekStart, weekEnd });
+    }
+    
+    const weekData = weekMap.get(weekKey)!;
+    weekData.points += issue.storyPoints || 1;
+  });
+  
+  // Find week with most points
+  let maxPoints = 0;
+  let bestWeek = null;
+  
+  weekMap.forEach(week => {
+    if (week.points > maxPoints) {
+      maxPoints = week.points;
+      bestWeek = week;
+    }
+  });
+  
+  return bestWeek ? { 
+    weekStart: bestWeek.weekStart, 
+    weekEnd: bestWeek.weekEnd, 
+    points: maxPoints 
+  } : null;
+};
+
+/**
+ * Helper to format a date range as a string
+ */
+const formatDateRange = (start: Date, end: Date): string => {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  return `${start.toLocaleDateString(undefined, options)} - ${end.toLocaleDateString(undefined, options)}`;
+};
+
+/**
+ * Finds the most productive team member
+ */
+const findMostProductiveAssignee = (assigneeData: AssigneeMetrics[]): AssigneeMetrics | null => {
+  if (assigneeData.length === 0) return null;
+  
+  return assigneeData.reduce((most, current) => {
+    return (current.completedPoints > most.completedPoints) ? current : most;
+  }, assigneeData[0]);
+};
+
+/**
+ * Calculates the average cycle time (days from creation to resolution)
+ */
+const calculateAverageCycleTime = (issues: any[]): number => {
+  const resolvedIssues = issues.filter(issue => issue.resolved);
+  if (resolvedIssues.length === 0) return 0;
+  
+  const totalDays = resolvedIssues.reduce((total, issue) => {
+    const createdDate = new Date(issue.created);
+    const resolvedDate = new Date(issue.resolved!);
+    const days = (resolvedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+    return total + days;
+  }, 0);
+  
+  return totalDays / resolvedIssues.length;
 };
 
 /**
