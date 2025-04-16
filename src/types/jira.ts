@@ -7,6 +7,7 @@ export interface JiraIssue {
   resolved?: string;
   storyPoints?: number;
   epic?: string;
+  assignee?: string;
 }
 
 export interface ChartData {
@@ -26,5 +27,11 @@ export interface ProcessedData {
   completedPoints: number;
   totalPoints: number;
   issues: JiraIssue[];
+  assigneeData: {
+    name: string;
+    completedPoints: number;
+    assignedPoints: number;
+    issueCount: number;
+  }[];
+  totalAssignees: number;
 }
-

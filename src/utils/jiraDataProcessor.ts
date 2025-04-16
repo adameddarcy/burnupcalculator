@@ -27,6 +27,8 @@ export const parseJiraCSV = (csvData: string): JiraIssue[] => {
       // Look for Story Points in various possible column names
       storyPoints: parseStoryPoints(row),
       epic: row['Epic Link'] || row['Epic'] || '',
+      // Handle assignee from various possible column names
+      assignee: row['Assignee'] || row['Assigned To'] || row['Assigned'] || '',
     };
   }).filter((issue: JiraIssue) => issue.key !== '');
 };
@@ -115,6 +117,39 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     return { date, remaining: remainingPoints };
   });
 
+  // Process assignee data
+  const assigneeMap = new Map<string, { 
+    completedPoints: number; 
+    assignedPoints: number; 
+    issueCount: number; 
+  }>();
+
+  sortedIssues.forEach(issue => {
+    const assignee = issue.assignee || 'Unassigned';
+    
+    if (!assigneeMap.has(assignee)) {
+      assigneeMap.set(assignee, { 
+        completedPoints: 0, 
+        assignedPoints: 0, 
+        issueCount: 0 
+      });
+    }
+    
+    const assigneeData = assigneeMap.get(assignee)!;
+    assigneeData.issueCount++;
+    assigneeData.assignedPoints += issue.storyPoints || 0;
+    
+    if (issue.resolved) {
+      assigneeData.completedPoints += issue.storyPoints || 0;
+    }
+  });
+
+  // Convert assignee map to array for the response
+  const assigneeData = Array.from(assigneeMap.entries()).map(([name, data]) => ({
+    name,
+    ...data
+  }));
+
   // Format for chart display
   const burnupChartData: ChartData = {
     labels: dateLabels,
@@ -155,6 +190,8 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     completedPoints,
     totalPoints,
     issues: sortedIssues,
+    assigneeData,
+    totalAssignees: assigneeMap.size,
   };
 };
 
@@ -176,4 +213,3 @@ export const validateJiraCSV = (data: any[]): boolean => {
   // If we found at least 3 of 4 required fields, consider it valid
   return foundFieldsCount >= 3;
 };
-
