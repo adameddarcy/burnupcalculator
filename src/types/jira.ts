@@ -16,11 +16,12 @@ export interface ChartData {
   labels: string[];
   datasets: {
     label: string;
-    data: number[];
+    data: number[] | any[];
     backgroundColor?: string;
     borderColor?: string;
     fill?: boolean;
     borderDash?: number[];
+    type?: string;
   }[];
 }
 
@@ -42,4 +43,9 @@ export interface ProcessedData {
   assigneeChartData?: ChartData;
   projectedCompletionDate?: string;
   velocity?: number;
+  // Add new chart properties
+  cumulativeFlow?: ChartData;
+  cycleTime?: ChartData;
+  velocityChart?: ChartData;
+  ganttChart?: ChartData;
 }

@@ -6,13 +6,17 @@ import { BurndownChart } from "@/components/BurndownChart";
 import { JiraIssuesTable } from "@/components/JiraIssuesTable";
 import { SummaryMetrics } from "@/components/SummaryMetrics";
 import { AssigneeMetricsChart } from "@/components/AssigneeMetrics";
+import { CumulativeFlowChart } from "@/components/CumulativeFlowChart";
+import { CycleTimeChart } from "@/components/CycleTimeChart";
+import { VelocityChart } from "@/components/VelocityChart";
+import { GanttChart } from "@/components/GanttChart";
 import { JiraIssue, ProcessedData } from "@/types/jira";
 import { processJiraData } from "@/utils/jiraDataProcessor";
 import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3, Users } from "lucide-react";
+import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp, ChartGantt } from "lucide-react";
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
@@ -37,12 +41,20 @@ export default function Index() {
     }
   };
 
-  const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee') => {
+  const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee' | 'cumulative' | 'cycle' | 'velocity' | 'gantt') => {
     const chartId = chartType === 'burnup' 
       ? 'burnup-chart' 
       : chartType === 'burndown' 
         ? 'burndown-chart' 
-        : 'assignee-chart';
+        : chartType === 'assignee'
+          ? 'assignee-chart'
+          : chartType === 'cumulative'
+            ? 'cumulative-flow-chart'
+            : chartType === 'cycle'
+              ? 'cycle-time-chart'
+              : chartType === 'velocity'
+                ? 'velocity-chart'
+                : 'gantt-chart';
     exportChartAsImage(chartId, `jira-${chartType}-chart`);
   };
 
@@ -97,7 +109,11 @@ export default function Index() {
                 <TabsList>
                   <TabsTrigger value="charts" className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    Charts
+                    Core Charts
+                  </TabsTrigger>
+                  <TabsTrigger value="advanced" className="flex items-center gap-2">
+                    <ChartBarStacked className="h-4 w-4" />
+                    Advanced Charts
                   </TabsTrigger>
                   <TabsTrigger value="assignees" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
@@ -119,24 +135,6 @@ export default function Index() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleExportChart('burnup')}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export Burnup
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleExportChart('burndown')}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export Burndown
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
                     onClick={() => {
                       setJiraData(null);
                       setProcessedData(null);
@@ -148,26 +146,122 @@ export default function Index() {
               </div>
               
               <TabsContent value="charts">
-                <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
-                  {processedData && (
-                    <>
-                      <div id="burnup-chart-container">
-                        <BurnupChart 
-                          data={processedData.burnup} 
-                          projectedCompletionDate={processedData.projectedCompletionDate}
-                        />
-                      </div>
-                      <div id="burndown-chart-container">
-                        <BurndownChart data={processedData.burndown} />
-                      </div>
-                    </>
-                  )}
+                <div className="grid gap-6">
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('burnup')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Burnup
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('burndown')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Burndown
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
+                    {processedData && (
+                      <>
+                        <div id="burnup-chart-container">
+                          <BurnupChart 
+                            data={processedData.burnup} 
+                            projectedCompletionDate={processedData.projectedCompletionDate}
+                          />
+                        </div>
+                        <div id="burndown-chart-container">
+                          <BurndownChart data={processedData.burndown} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="advanced">
+                <div className="grid gap-6">
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('cumulative')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Cumulative Flow
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('cycle')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Cycle Time
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('velocity')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Velocity
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportChart('gantt')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Gantt
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
+                    {processedData && processedData.cumulativeFlow && (
+                      <>
+                        <div id="cumulative-flow-chart-container">
+                          <CumulativeFlowChart data={processedData.cumulativeFlow} />
+                        </div>
+                        <div id="cycle-time-chart-container">
+                          <CycleTimeChart data={processedData.cycleTime || { labels: [], datasets: [] }} />
+                        </div>
+                        <div id="velocity-chart-container">
+                          <VelocityChart data={processedData.velocityChart || { labels: [], datasets: [] }} />
+                        </div>
+                        <div id="gantt-chart-container">
+                          <GanttChart data={processedData.ganttChart || { labels: [], datasets: [] }} />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="assignees">
                 {processedData && processedData.assigneeData.length > 0 && (
                   <div id="assignee-chart-container">
+                    <div className="flex justify-end mb-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleExportChart('assignee')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Chart
+                      </Button>
+                    </div>
                     <AssigneeMetricsChart 
                       data={processedData.assigneeData} 
                       totalPoints={processedData.totalPoints} 

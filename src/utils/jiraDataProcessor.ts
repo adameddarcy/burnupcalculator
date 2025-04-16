@@ -1,4 +1,3 @@
-
 import Papa from 'papaparse';
 import { JiraIssue, ProcessedData, ChartData, AssigneeMetrics } from '@/types/jira';
 
@@ -65,32 +64,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     new Date(a.created).getTime() - new Date(b.created).getTime()
   );
 
-  // Get unique dates from the issues (created, updated and resolved)
-  const allDates = new Set<string>();
-  sortedIssues.forEach(issue => {
-    // Format date to YYYY-MM-DD
-    const createdDate = new Date(issue.created).toISOString().split('T')[0];
-    allDates.add(createdDate);
-    
-    if (issue.updated) {
-      const updatedDate = new Date(issue.updated).toISOString().split('T')[0];
-      allDates.add(updatedDate);
-    }
-    
-    if (issue.resolved) {
-      const resolvedDate = new Date(issue.resolved).toISOString().split('T')[0];
-      allDates.add(resolvedDate);
-    }
-  });
-
-  // Convert to array and sort dates
-  const dateLabels = Array.from(allDates).sort();
-
-  // Calculate cumulative story points for burnup and burndown
-  const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
-  let completedPoints = 0;
-
-  // Process assignee data - MOVED THIS SECTION EARLIER
+  // Create assignee map first - moved to the top to avoid "used before declaration" errors
   const assigneeMap = new Map<string, { 
     completedPoints: number; 
     assignedPoints: number; 
@@ -116,6 +90,31 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
       assigneeData.completedPoints += issue.storyPoints || 1;
     }
   });
+
+  // Get unique dates from the issues (created, updated and resolved)
+  const allDates = new Set<string>();
+  sortedIssues.forEach(issue => {
+    // Format date to YYYY-MM-DD
+    const createdDate = new Date(issue.created).toISOString().split('T')[0];
+    allDates.add(createdDate);
+    
+    if (issue.updated) {
+      const updatedDate = new Date(issue.updated).toISOString().split('T')[0];
+      allDates.add(updatedDate);
+    }
+    
+    if (issue.resolved) {
+      const resolvedDate = new Date(issue.resolved).toISOString().split('T')[0];
+      allDates.add(resolvedDate);
+    }
+  });
+
+  // Convert to array and sort dates
+  const dateLabels = Array.from(allDates).sort();
+
+  // Calculate cumulative story points for burnup and burndown
+  const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
+  let completedPoints = 0;
 
   // Generate data for burnup chart
   const burnupData = dateLabels.map(date => {
@@ -312,6 +311,172 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
   // Use customTeamMembers if provided, otherwise use the count from assigneeMap
   const effectiveTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
 
+  // 1. Cumulative Flow Chart Data
+  // Get all statuses
+  const allStatuses = new Set<string>();
+  sortedIssues.forEach(issue => allStatuses.add(issue.status));
+  const statusList = Array.from(allStatuses);
+  
+  // For each date, count issues in each status
+  const cumulativeFlowData = dateLabels.map(date => {
+    const dateTime = new Date(date).getTime();
+    const statusCounts: Record<string, number> = {};
+    
+    statusList.forEach(status => {
+      statusCounts[status] = sortedIssues.filter(issue => 
+        new Date(issue.created).getTime() <= dateTime && 
+        (issue.status === status || 
+         (status === 'Done' && issue.resolved && new Date(issue.resolved).getTime() <= dateTime))
+      ).length;
+    });
+    
+    return { date, ...statusCounts };
+  });
+  
+  // Format for chart display
+  const cumulativeFlowChartData: ChartData = {
+    labels: dateLabels,
+    datasets: statusList.map((status, index) => {
+      // Generate a color based on the index
+      const hue = (index * 137) % 360;
+      const color = `hsla(${hue}, 70%, 60%, 0.7)`;
+      
+      return {
+        label: status,
+        data: cumulativeFlowData.map(d => d[status] || 0),
+        backgroundColor: color,
+        borderColor: color,
+        fill: true,
+      };
+    }),
+  };
+  
+  // 2. Cycle Time Chart Data
+  const cycleTimeData = resolvedIssues.map(issue => {
+    const createdDate = new Date(issue.created);
+    const resolvedDate = new Date(issue.resolved!);
+    const cycleTimeDays = (resolvedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    return {
+      issue: issue.key,
+      cycleTime: cycleTimeDays,
+      resolvedDate: resolvedDate,
+      storyPoints: issue.storyPoints || 1
+    };
+  });
+  
+  const cycleTimeChartData: ChartData = {
+    labels: cycleTimeData.map(d => d.resolvedDate.toISOString().split('T')[0]),
+    datasets: [{
+      label: 'Cycle Time (days)',
+      data: cycleTimeData.map(d => ({
+        x: d.resolvedDate,
+        y: d.cycleTime,
+        r: Math.sqrt(d.storyPoints) * 5, // Size based on story points
+      })),
+      backgroundColor: 'rgba(75, 192, 192, 0.6)',
+    }],
+  };
+  
+  // 3. Velocity Chart Data
+  // Group by weeks or time periods for velocity
+  const timePeriodsMap = new Map<string, number>();
+  
+  resolvedIssues.forEach(issue => {
+    if (!issue.resolved) return;
+    
+    // Group by week
+    const resolvedDate = new Date(issue.resolved);
+    const weekStart = new Date(resolvedDate);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Go to start of week (Sunday)
+    const weekKey = weekStart.toISOString().split('T')[0];
+    
+    const points = issue.storyPoints || 1;
+    const currentPoints = timePeriodsMap.get(weekKey) || 0;
+    timePeriodsMap.set(weekKey, currentPoints + points);
+  });
+  
+  // Convert to array and sort
+  const velocityData = Array.from(timePeriodsMap.entries())
+    .map(([date, points]) => ({ date, points }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  // Calculate moving average
+  const movingAverageWindow = 3; // 3-week moving average
+  const movingAverages = velocityData.map((_, index, array) => {
+    if (index < movingAverageWindow - 1) return null;
+    
+    const sum = array
+      .slice(index - movingAverageWindow + 1, index + 1)
+      .reduce((acc, curr) => acc + curr.points, 0);
+    
+    return sum / movingAverageWindow;
+  });
+  
+  const velocityChartData: ChartData = {
+    labels: velocityData.map(d => {
+      const date = new Date(d.date);
+      return `${date.getMonth()+1}/${date.getDate()}`;
+    }),
+    datasets: [
+      {
+        label: 'Points Completed',
+        data: velocityData.map(d => d.points),
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+        type: 'bar'
+      },
+      {
+        label: 'Moving Average',
+        data: movingAverages,
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 2,
+        type: 'line',
+        fill: false
+      }
+    ],
+  };
+  
+  // 4. Gantt Chart Data
+  // Sort issues by status and then by date
+  const ganttIssues = sortedIssues
+    .filter(issue => issue.created)
+    .sort((a, b) => {
+      if (a.status !== b.status) return a.status.localeCompare(b.status);
+      return new Date(a.created).getTime() - new Date(b.created).getTime();
+    })
+    .slice(0, 20); // Limit to 20 issues for readability
+  
+  const ganttChartData: ChartData = {
+    labels: ganttIssues.map(issue => `${issue.key}: ${issue.summary.substring(0, 30)}...`),
+    datasets: [{
+      label: 'Timeline',
+      data: ganttIssues.map(issue => {
+        const startDate = new Date(issue.created);
+        const endDate = issue.resolved ? new Date(issue.resolved) : new Date();
+        
+        // Need to store the actual dates for tooltip
+        return {
+          x: startDate, // Start position
+          y: 1, // Using fixed height
+          _custom: {
+            start: startDate,
+            end: endDate
+          }
+        };
+      }),
+      backgroundColor: ganttIssues.map(issue => {
+        // Color based on status
+        if (issue.resolved) return 'rgba(75, 192, 192, 0.6)'; // Completed
+        if (issue.status.toLowerCase().includes('progress')) return 'rgba(255, 206, 86, 0.6)'; // In progress
+        return 'rgba(255, 99, 132, 0.6)'; // Not started
+      }),
+      borderWidth: 1,
+    }]
+  };
+
   return {
     burnup: burnupChartData,
     burndown: burndownChartData,
@@ -323,6 +488,10 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     assigneeChartData,
     projectedCompletionDate,
     velocity,
+    cumulativeFlow: cumulativeFlowChartData,
+    cycleTime: cycleTimeChartData,
+    velocityChart: velocityChartData,
+    ganttChart: ganttChartData
   };
 };
 

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, FileBarChart, Users, Calendar, TrendingUp, Edit2 } from 'lucide-react';
+import { CheckCircle, Clock, FileBarChart, Users, Calendar, TrendingUp, Edit2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -64,6 +64,16 @@ export function SummaryMetrics({
     }
   };
 
+  const handleReset = () => {
+    setCustomTeamMembers(undefined);
+    setIsEditing(false);
+    
+    // Reset team members to default by passing the original value
+    if (onTeamMembersChange) {
+      onTeamMembersChange(totalAssignees);
+    }
+  };
+
   // Format projected date if available
   const formattedDate = projectedCompletionDate 
     ? new Date(projectedCompletionDate).toLocaleDateString(undefined, {
@@ -110,14 +120,27 @@ export function SummaryMetrics({
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Users className="h-4 w-4" /> 
             <span className="text-sm font-medium">Team Members</span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5 ml-auto" 
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Edit2 className="h-3 w-3" />
-            </Button>
+            <div className="flex ml-auto">
+              {customTeamMembers !== undefined && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5" 
+                  onClick={handleReset}
+                  title="Reset to default"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5" 
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           
           {isEditing ? (
