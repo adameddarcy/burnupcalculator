@@ -21,7 +21,7 @@ interface SummaryMetricsProps {
   totalIssues: number;
   completionPercentage: number;
   totalAssignees?: number;
-  projectedCompletionDate?: string;
+  projectedCompletionDate?: Date | null;  // Updated to accept Date | null
   velocity?: number;
   onTeamMembersChange?: (teamMembers: number) => void;
 }
@@ -76,7 +76,7 @@ export function SummaryMetrics({
 
   // Format projected date if available
   const formattedDate = projectedCompletionDate 
-    ? new Date(projectedCompletionDate).toLocaleDateString(undefined, {
+    ? projectedCompletionDate.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
