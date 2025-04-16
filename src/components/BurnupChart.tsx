@@ -37,11 +37,6 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           return;
         }
 
-        // Find the index of the projected completion date in the labels array
-        const projectedDateIndex = projectedCompletionDate 
-          ? data.labels.findIndex(label => label === projectedCompletionDate)
-          : -1;
-
         // Create chart options
         const chartOptions: any = {
           responsive: true,
@@ -76,32 +71,37 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           }
         };
         
-        // Add annotations if we have a projected completion date and it's in the labels
-        if (projectedDateIndex !== -1) {
-          chartOptions.plugins.annotation = {
-            annotations: {
-              projectedCompletion: {
-                type: 'line',
-                xMin: projectedDateIndex,
-                xMax: projectedDateIndex,
-                borderColor: 'rgba(255, 99, 132, 0.8)',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                label: {
-                  display: true,
-                  content: 'Projected Completion',
-                  position: 'start',
-                  backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                  font: {
-                    weight: 'bold'
+        // Add annotations if we have a projected completion date
+        if (projectedCompletionDate) {
+          const projectedDateIndex = data.labels.findIndex(
+            label => label === projectedCompletionDate
+          );
+          
+          if (projectedDateIndex !== -1) {
+            chartOptions.plugins.annotation = {
+              annotations: {
+                projectedCompletion: {
+                  type: 'line',
+                  xMin: projectedDateIndex,
+                  xMax: projectedDateIndex,
+                  borderColor: 'rgba(255, 99, 132, 0.8)',
+                  borderWidth: 2,
+                  borderDash: [5, 5],
+                  label: {
+                    display: true,
+                    content: 'Projected Completion',
+                    position: 'start',
+                    backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                    font: {
+                      weight: 'bold'
+                    }
                   }
                 }
               }
-            }
-          };
+            };
+          }
         }
 
-        // Cast data to any to avoid TypeScript errors with Chart.js
         chartInstance.current = new Chart(ctx, {
           type: 'line',
           data: data as any, // Explicitly cast to any

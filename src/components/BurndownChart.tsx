@@ -39,24 +39,30 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
 
         // Create annotations for projected completion date if it exists
         const annotations: Record<string, any> = {};
+        
         if (projectedCompletionDate) {
-          annotations['projectedCompletion'] = {
-            type: 'line',
-            xMin: projectedCompletionDate,
-            xMax: projectedCompletionDate,
-            borderColor: 'rgba(255, 99, 132, 0.8)',
-            borderWidth: 2,
-            borderDash: [6, 6],
-            label: {
-              display: true,
-              content: 'Projected Completion',
-              position: 'start',
-              backgroundColor: 'rgba(255, 99, 132, 0.8)'
-            }
-          };
+          const projectedDateIndex = data.labels.findIndex(
+            label => label === projectedCompletionDate
+          );
+          
+          if (projectedDateIndex !== -1) {
+            annotations['projectedCompletion'] = {
+              type: 'line',
+              xMin: projectedDateIndex,
+              xMax: projectedDateIndex,
+              borderColor: 'rgba(255, 99, 132, 0.8)',
+              borderWidth: 2,
+              borderDash: [6, 6],
+              label: {
+                display: true,
+                content: 'Projected Completion',
+                position: 'start',
+                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+              }
+            };
+          }
         }
 
-        // Cast our custom ChartData to any to avoid TypeScript errors with Chart.js
         chartInstance.current = new Chart(ctx, {
           type: 'line',
           data: data as any, // Explicitly cast to any to bypass type checking
