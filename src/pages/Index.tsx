@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { FileUpload } from "@/components/FileUpload";
 import { BurnupChart } from "@/components/BurnupChart";
@@ -15,7 +16,7 @@ import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp, LinkedIn } from "lucide-react";
+import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp, Linkedin } from "lucide-react";
 import { LinkedInButton } from '@/components/LinkedInButton';
 
 export default function Index() {

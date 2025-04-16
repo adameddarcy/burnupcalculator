@@ -1,5 +1,5 @@
 
-import { LinkedIn } from 'lucide-react';
+import { Linkedin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 interface LinkedInButtonProps {
@@ -18,7 +18,7 @@ export function LinkedInButton({ profileUrl }: LinkedInButtonProps) {
       onClick={handleClick}
       className="flex items-center gap-2"
     >
-      <LinkedIn className="h-4 w-4" />
+      <Linkedin className="h-4 w-4" />
       LinkedIn
     </Button>
   );
