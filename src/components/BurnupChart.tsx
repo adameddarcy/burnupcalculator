@@ -19,12 +19,11 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
     const renderChart = async () => {
       // Dynamically import Chart.js to avoid SSR issues
       const { Chart, registerables } = await import('chart.js');
-      // Import annotation plugin
-      const annotationPlugin = await import('chartjs-plugin-annotation');
-      
       Chart.register(...registerables);
-      // Register the annotation plugin
-      Chart.register(annotationPlugin.default);
+      
+      // Import and register annotation plugin properly
+      const { Annotation } = await import('chartjs-plugin-annotation');
+      Chart.register(Annotation);
 
       // Destroy previous chart if it exists
       if (chartInstance.current) {
@@ -39,7 +38,7 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
         ? data.labels.findIndex(label => label === projectedCompletionDate)
         : -1;
 
-      // Create chart options with conditional annotations
+      // Create chart options
       const chartOptions: any = {
         responsive: true,
         maintainAspectRatio: false,
@@ -85,12 +84,12 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
               borderWidth: 2,
               borderDash: [5, 5],
               label: {
-                enabled: true,
+                display: true,
                 content: 'Projected Completion',
                 position: 'start',
                 backgroundColor: 'rgba(255, 99, 132, 0.8)',
                 font: {
-                  weight: 'bold',
+                  weight: 'bold'
                 }
               }
             }
