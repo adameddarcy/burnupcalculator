@@ -11,7 +11,6 @@ interface BurndownChartProps {
 export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<any>(null);
-  const logoRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (!chartRef.current || !data) return;
@@ -21,11 +20,11 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
         // Dynamically import Chart.js to avoid SSR issues
         const { Chart, registerables } = await import('chart.js');
         Chart.register(...registerables);
-        
+
         // Import annotation plugin for consistency with BurnupChart
         const annotationPlugin = await import('chartjs-plugin-annotation');
         Chart.register(annotationPlugin.default);
-
+        
         // Destroy previous chart if it exists
         if (chartInstance.current) {
           chartInstance.current.destroy();
@@ -36,38 +35,10 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
           console.error('Failed to get canvas context');
           return;
         }
-        
-        // Create a custom logo plugin
-        const logoPlugin = {
-          id: 'logoPlugin',
-          afterRender: (chart) => {
-            const logoImage = logoRef.current;
-            if (logoImage) {
-              const ctx = chart.ctx;
-              const logoWidth = 50;
-              const logoHeight = 50;
-              const margin = 10;
-              
-              ctx.save();
-              ctx.globalCompositeOperation = 'destination-over';
-              ctx.drawImage(
-                logoImage, 
-                chart.width - logoWidth - margin, 
-                margin, 
-                logoWidth, 
-                logoHeight
-              );
-              ctx.restore();
-            }
-          }
-        };
-        
-        // Register the custom plugin
-        Chart.register(logoPlugin);
 
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data as any,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -131,12 +102,6 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
       <CardContent>
         <div style={{ height: `${height}px` }}>
           <canvas id="burndown-chart" ref={chartRef} />
-          <img 
-            ref={logoRef} 
-            src="/logo.png" 
-            alt="Logo" 
-            style={{ display: 'none' }} 
-          />
         </div>
       </CardContent>
     </Card>

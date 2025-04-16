@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { FileUpload } from "@/components/FileUpload";
 import { BurnupChart } from "@/components/BurnupChart";
 import { BurndownChart } from "@/components/BurndownChart";
@@ -71,12 +71,7 @@ export default function Index() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center mb-8 text-center relative">
-          <img 
-            src="/logo.png" 
-            alt="Jira Epic Metrics Logo" 
-            className="absolute top-0 right-0 w-16 h-16 object-contain"
-          />
+        <div className="flex flex-col items-center justify-center mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight">
             Jira Epic Metrics Calculator
           </h1>
