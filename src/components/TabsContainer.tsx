@@ -6,8 +6,10 @@ import { AssigneesTab } from "./tabs/AssigneesTab";
 import { DataTableTab } from "./tabs/DataTableTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, ChartBarStacked, Download } from "lucide-react";
+import { BarChart3, Users, ChartBarStacked, Download, FilePdf } from "lucide-react";
 import { JiraIssue, ProcessedData } from "@/types/jira";
+import { generateFullReport } from "@/utils/pdfExport";
+import { toast } from "@/components/ui/use-toast";
 
 interface TabsContainerProps {
   jiraData: JiraIssue[];
@@ -26,9 +28,40 @@ export function TabsContainer({
   onExportData,
   onNewUpload
 }: TabsContainerProps) {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const effectiveTeamMembers = customTeamMembers !== null 
     ? customTeamMembers
     : processedData?.totalAssignees || 0;
+
+  const handleExportPdf = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      toast({
+        title: "Generating PDF report",
+        description: "Please wait while we generate your report...",
+      });
+      
+      // Small delay to ensure toast is displayed
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      await generateFullReport(processedData, customTeamMembers);
+      
+      toast({
+        title: "Report generated successfully",
+        description: "Your PDF report has been downloaded.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Error generating report",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   return (
     <Tabs defaultValue="charts" className="w-full">
@@ -50,6 +83,16 @@ export function TabsContainer({
         </TabsList>
 
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={isGeneratingPdf}
+            className="flex items-center gap-2"
+          >
+            <FilePdf className="h-4 w-4" />
+            {isGeneratingPdf ? "Generating PDF..." : "Export PDF Report"}
+          </Button>
           <Button 
             variant="outline" 
             size="sm"
