@@ -22,6 +22,7 @@ export interface ChartDataset {
   borderDash?: number[];
   type?: string;
   tension?: number;
+  borderWidth?: number; // Added missing borderWidth property
 }
 
 export interface ChartData {
