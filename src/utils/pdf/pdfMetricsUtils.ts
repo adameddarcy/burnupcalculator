@@ -86,9 +86,9 @@ const addFunFactsToPdf = (
     yPos += 8;
   }
   
-  // Calculate average cycle time
-  if (processedData.issues.length > 0 && processedData.issues.some(issue => issue.resolved)) {
-    const avgCycleTime = calculateAverageCycleTime(processedData.issues);
+  // Calculate average time from "in progress" to completion
+  const avgCycleTime = calculateAverageTimeToCompletion(processedData.issues);
+  if (avgCycleTime > 0) {
     doc.text(`Average time to complete an issue: ${avgCycleTime.toFixed(1)} days`, margin, yPos);
     yPos += 8;
   }
@@ -163,6 +163,45 @@ const findMostProductiveAssignee = (assigneeData: AssigneeMetrics[]): AssigneeMe
   return assigneeData.reduce((most, current) => {
     return (current.completedPoints > most.completedPoints) ? current : most;
   }, assigneeData[0]);
+};
+
+/**
+ * Calculates the average time from "in progress" to completion
+ */
+const calculateAverageTimeToCompletion = (issues: any[]): number => {
+  const completedIssues = issues.filter(issue => 
+    issue.resolved && 
+    issue.statusChanges && 
+    issue.statusChanges.some(change => 
+      change.toStatus.toLowerCase().includes('progress') || 
+      change.toStatus.toLowerCase() === 'in progress'
+    )
+  );
+  
+  if (completedIssues.length === 0) {
+    return calculateAverageCycleTime(issues);
+  }
+  
+  const totalDays = completedIssues.reduce((total, issue) => {
+    const inProgressChange = issue.statusChanges
+      .find(change => 
+        change.toStatus.toLowerCase().includes('progress') || 
+        change.toStatus.toLowerCase() === 'in progress'
+      );
+    
+    if (!inProgressChange || !inProgressChange.date) {
+      const createdDate = new Date(issue.created);
+      const resolvedDate = new Date(issue.resolved);
+      return total + (resolvedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+    }
+    
+    const inProgressDate = new Date(inProgressChange.date);
+    const resolvedDate = new Date(issue.resolved);
+    const days = (resolvedDate.getTime() - inProgressDate.getTime()) / (1000 * 60 * 60 * 24);
+    return total + days;
+  }, 0);
+  
+  return totalDays / completedIssues.length;
 };
 
 /**
