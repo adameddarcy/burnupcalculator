@@ -148,7 +148,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     
     // Get first and last resolved dates
     const firstResolvedDate = new Date(sortedResolved[0].resolved!);
-    const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);
+    const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);\
     
     // Calculate duration in days
     const durationDays = Math.max(1, (lastResolvedDate.getTime() - firstResolvedDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -522,7 +522,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     ],
   };
   
-  // 4. Gantt Chart Data
+  // 4. Gantt Chart Data (Timeline-style)
   // Sort issues by status and then by date
   const ganttIssues = sortedIssues
     .filter(issue => issue.created)
@@ -532,7 +532,8 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     })
     .slice(0, 20); // Limit to 20 issues for readability
   
-  const ganttChartData: ChartData = {
+  // We'll use ganttTimelineData instead of redefining ganttChartData
+  const ganttTimelineData: ChartData = {
     labels: ganttIssues.map(issue => `${issue.key}: ${issue.summary.substring(0, 30)}...`),
     datasets: [{
       label: 'Timeline',
@@ -574,7 +575,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     cumulativeFlow: cumulativeFlowChartData,
     cycleTime: cycleTimeChartData,
     velocityChart: velocityChartData,
-    ganttChart: ganttChartData
+    ganttChart: ganttChartData // This is our bar chart showing average durations now
   };
 };
 

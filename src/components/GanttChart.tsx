@@ -58,7 +58,6 @@ export function GanttChart({ data, height = 400 }: GanttChartProps) {
           data: {
             labels: data.labels,
             datasets: [{
-              axis: 'y',
               label: 'Average Duration (days)',
               data: data.datasets[0].data.map(item => Number(item.y)),
               backgroundColor: data.datasets[0].backgroundColor,
