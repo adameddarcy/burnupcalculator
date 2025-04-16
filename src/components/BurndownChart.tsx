@@ -56,9 +56,10 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
           };
         }
 
+        // Cast our custom ChartData to any to avoid TypeScript errors with Chart.js
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data,
+          data: data as any, // Explicitly cast to any to bypass type checking
           options: {
             responsive: true,
             maintainAspectRatio: false,
