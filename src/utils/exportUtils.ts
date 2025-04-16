@@ -6,9 +6,12 @@ export const exportChartAsImage = (chartId: string, fileName: string = 'chart') 
   const canvas = document.getElementById(chartId) as HTMLCanvasElement;
   if (!canvas) return;
   
+  // Get current date in YYYY-MM-DD format
+  const dateStr = new Date().toISOString().split('T')[0];
+  
   // Create a temporary link element
   const link = document.createElement('a');
-  link.download = `${fileName}.png`;
+  link.download = `${fileName}-${dateStr}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
   link.remove();
@@ -34,12 +37,15 @@ export const exportDataAsCSV = (data: any[], fileName: string = 'data') => {
     )
   ].join('\n');
 
+  // Get current date in YYYY-MM-DD format
+  const dateStr = new Date().toISOString().split('T')[0];
+
   // Create a temporary link element
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `${fileName}.csv`);
+  link.setAttribute('download', `${fileName}-${dateStr}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
