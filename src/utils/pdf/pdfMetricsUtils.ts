@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { ProcessedData, AssigneeMetrics } from '@/types/jira';
 
@@ -81,18 +80,9 @@ const addFunFactsToPdf = (
   // Find the week with most completed points
   const weeklyCompletion = findWeekWithMostPoints(processedData);
   if (weeklyCompletion) {
-    doc.text(`🚀 Wow! During the week of ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)},`, margin, yPos);
+    doc.text(`During the week of ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)},`, margin, yPos);
     yPos += 5;
-    doc.text(`   the team crushed it with ${weeklyCompletion.points} story points! 🎉`, margin, yPos);
-    yPos += 8;
-  }
-  
-  // Add a fun fact about cycle time if possible
-  const avgCycleTime = calculateAverageTimeToCompletion(processedData.issues);
-  if (avgCycleTime > 0) {
-    doc.text(`⚡ Quick movers! The team typically transforms issues from`, margin, yPos);
-    yPos += 5;
-    doc.text(`   "in progress" to "done" in just ${avgCycleTime.toFixed(1)} days. Speed demon mode! 💨`, margin, yPos);
+    doc.text(`the team crushed it with ${weeklyCompletion.points} story points!`, margin, yPos);
     yPos += 8;
   }
   
