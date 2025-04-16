@@ -9,6 +9,7 @@ import { AssigneeMetricsChart } from "@/components/AssigneeMetrics";
 import { CumulativeFlowChart } from "@/components/CumulativeFlowChart";
 import { CycleTimeChart } from "@/components/CycleTimeChart";
 import { VelocityChart } from "@/components/VelocityChart";
+import { HelpDialog } from "@/components/HelpDialog";
 import { JiraIssue, ProcessedData } from "@/types/jira";
 import { processJiraData } from "@/utils/jiraDataProcessor";
 import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
@@ -72,9 +73,12 @@ export default function Index() {
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center justify-center mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Jira Epic Metrics Calculator
-          </h1>
+          <div className="flex justify-between w-full items-center mb-4">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Jira Epic Metrics Calculator
+            </h1>
+            <HelpDialog />
+          </div>
           <p className="text-muted-foreground mt-2">
             Upload a Jira CSV export to visualize burnup and burndown charts for your epics
           </p>
