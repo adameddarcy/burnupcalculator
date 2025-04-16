@@ -1,5 +1,6 @@
+
 import jsPDF from 'jspdf';
-import { ProcessedData } from '@/types/jira';
+import { ProcessedData, AssigneeMetrics } from '@/types/jira';
 
 /**
  * Adds summary metrics to the PDF report
@@ -77,7 +78,7 @@ const addFunFactsToPdf = (
   
   doc.setFontSize(10);
   
-  // Find the week with the most completed points
+  // Find the week with most completed points
   const weeklyCompletion = findWeekWithMostPoints(processedData);
   if (weeklyCompletion) {
     doc.text(`🚀 Wow! During the week of ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)},`, margin, yPos);
