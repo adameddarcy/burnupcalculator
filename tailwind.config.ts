@@ -24,6 +24,16 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				jira: {
+					blue: '#0052CC',
+					lightBlue: '#4C9AFF',
+					green: '#36B37E',
+					yellow: '#FFAB00',
+					red: '#FF5630',
+					dark: '#172B4D',
+					gray: '#505F79',
+					lightGray: '#97A0AF'
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'

@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
 
-## Project info
+# Jira Epic Metrics Calculator
 
-**URL**: https://lovable.dev/projects/3c5735a2-cf73-490a-8934-aa948f6e47f6
+A web application that generates burnup and burndown charts from Jira epic CSV exports.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Upload Jira CSV exports
+- Generate burnup and burndown charts
+- View detailed issue data in a table format
+- Export charts as images
+- Export processed data as CSV
 
-**Use Lovable**
+## How to Use
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3c5735a2-cf73-490a-8934-aa948f6e47f6) and start prompting.
+1. **Export Data from Jira**
+   - In Jira, navigate to your epic or filter view
+   - Click on "Export" and select "CSV (All Fields)"
+   - Save the CSV file to your computer
 
-Changes made via Lovable will be committed automatically to this repo.
+2. **Upload CSV to the Application**
+   - Click the upload area or drag and drop your CSV file
+   - The application will automatically parse and validate the data
 
-**Use your preferred IDE**
+3. **View and Analyze Charts**
+   - Once uploaded, you'll see burnup and burndown charts
+   - The burnup chart shows completed story points vs total scope over time
+   - The burndown chart shows remaining work over time
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+4. **Export Results**
+   - Click "Export Burnup" or "Export Burndown" to save charts as images
+   - Click "Export Data" to download the processed data as CSV
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## CSV Format Requirements
 
-Follow these steps:
+The application expects a standard Jira CSV export with at least these fields:
+- Issue key (or Key)
+- Summary
+- Status
+- Created
+- Resolved (optional)
+- Story Points (or Story point estimate)
+- Epic Link (optional)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Built With
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
 - React
-- shadcn-ui
-- Tailwind CSS
+- TypeScript
+- Chart.js for data visualization
+- Tailwind CSS and shadcn/ui for styling
+- PapaParse for CSV parsing
 
-## How can I deploy this project?
+## Project Status
 
-Simply open [Lovable](https://lovable.dev/projects/3c5735a2-cf73-490a-8934-aa948f6e47f6) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This is the initial version of the Jira Epic Metrics Calculator. Future enhancements may include:
+- Support for custom field mapping
+- Additional chart types
+- Trend analysis
+- Multi-epic comparison
