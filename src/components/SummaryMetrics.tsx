@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, FileBarChart, Users } from 'lucide-react';
+import { CheckCircle, Clock, FileBarChart, Users, Calendar } from 'lucide-react';
 
 interface SummaryMetricsProps {
   totalPoints: number;
@@ -9,6 +9,8 @@ interface SummaryMetricsProps {
   totalIssues: number;
   completionPercentage: number;
   totalAssignees?: number;
+  projectedCompletionDate?: string;
+  velocity?: number;
 }
 
 export function SummaryMetrics({ 
@@ -16,8 +18,19 @@ export function SummaryMetrics({
   completedPoints, 
   totalIssues, 
   completionPercentage,
-  totalAssignees = 0
+  totalAssignees = 0,
+  projectedCompletionDate,
+  velocity
 }: SummaryMetricsProps) {
+  // Format projected date if available
+  const formattedDate = projectedCompletionDate 
+    ? new Date(projectedCompletionDate).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    : 'Not available';
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -60,7 +73,7 @@ export function SummaryMetrics({
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 lg:col-span-4">
+      <Card className="md:col-span-2">
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-2">
             <div className="flex justify-between">
@@ -69,6 +82,21 @@ export function SummaryMetrics({
             </div>
             <Progress value={completionPercentage} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm font-medium">Projected Completion</span>
+          </div>
+          <div className="text-xl font-bold">{formattedDate}</div>
+          {velocity && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Team Velocity: {velocity.toFixed(1)} points/day
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

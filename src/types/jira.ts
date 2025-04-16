@@ -20,6 +20,7 @@ export interface ChartData {
     backgroundColor?: string;
     borderColor?: string;
     fill?: boolean;
+    borderDash?: number[];
   }[];
 }
 
@@ -39,4 +40,6 @@ export interface ProcessedData {
   assigneeData: AssigneeMetrics[];
   totalAssignees: number;
   assigneeChartData?: ChartData;
+  projectedCompletionDate?: string;
+  velocity?: number;
 }

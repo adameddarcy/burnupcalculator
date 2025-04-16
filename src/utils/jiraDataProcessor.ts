@@ -109,6 +109,82 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     return { date, completed: completedByDate, scope: scopeByDate };
   });
 
+  // Calculate velocity based on completed issues
+  const resolvedIssues = sortedIssues.filter(issue => issue.resolved);
+  let velocity = 0;
+  let projectedCompletionDate: string | undefined;
+  
+  if (resolvedIssues.length > 0) {
+    // Sort resolved issues by resolved date
+    const sortedResolved = [...resolvedIssues].sort((a, b) => 
+      new Date(a.resolved!).getTime() - new Date(b.resolved!).getTime()
+    );
+    
+    // Get first and last resolved dates
+    const firstResolvedDate = new Date(sortedResolved[0].resolved!);
+    const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);
+    
+    // Calculate duration in days
+    const durationDays = Math.max(1, (lastResolvedDate.getTime() - firstResolvedDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate points completed per day
+    const resolvedPoints = resolvedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
+    velocity = resolvedPoints / durationDays;
+    
+    // Calculate remaining points
+    const remainingPoints = totalPoints - completedPoints;
+    
+    // Calculate days to completion
+    const daysToCompletion = velocity > 0 ? Math.ceil(remainingPoints / velocity) : 0;
+    
+    // Calculate projected completion date if we have velocity
+    if (velocity > 0) {
+      const projectedDate = new Date();
+      projectedDate.setDate(projectedDate.getDate() + daysToCompletion);
+      projectedCompletionDate = projectedDate.toISOString().split('T')[0];
+    }
+  }
+
+  // Generate extended date labels for prediction
+  let extendedDateLabels = [...dateLabels];
+  if (projectedCompletionDate && !dateLabels.includes(projectedCompletionDate)) {
+    // Add projected completion date and any intermediate dates
+    const lastDate = new Date(dateLabels[dateLabels.length - 1]);
+    const projectedDate = new Date(projectedCompletionDate);
+    
+    // Add intermediate dates (every 7 days)
+    for (let d = new Date(lastDate); d <= projectedDate; d.setDate(d.getDate() + 7)) {
+      const dateString = d.toISOString().split('T')[0];
+      if (!extendedDateLabels.includes(dateString) && d < projectedDate) {
+        extendedDateLabels.push(dateString);
+      }
+    }
+    
+    // Add projected completion date
+    extendedDateLabels.push(projectedCompletionDate);
+    extendedDateLabels.sort();
+  }
+  
+  // Create projected data points for burnup chart
+  const projectedData: number[] = [];
+  
+  if (velocity > 0) {
+    extendedDateLabels.forEach(date => {
+      const currentDate = new Date(date);
+      const lastKnownDate = new Date(dateLabels[dateLabels.length - 1]);
+      
+      // For dates we have actual data
+      if (currentDate <= lastKnownDate) {
+        projectedData.push(NaN); // Use NaN for dates where we have actual data
+      } else {
+        // For future dates, calculate projected completion based on velocity
+        const daysSinceLastKnown = (currentDate.getTime() - lastKnownDate.getTime()) / (1000 * 60 * 60 * 24);
+        const projectedPoints = completedPoints + (velocity * daysSinceLastKnown);
+        projectedData.push(Math.min(projectedPoints, totalPoints)); // Cap at total points
+      }
+    });
+  }
+
   // Generate data for burndown chart
   const burndownData = dateLabels.map(date => {
     const dateTime = new Date(date).getTime();
@@ -173,9 +249,9 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     ]
   };
 
-  // Format for chart display
+  // Format for chart display with predictions
   const burnupChartData: ChartData = {
-    labels: dateLabels,
+    labels: extendedDateLabels,
     datasets: [
       {
         label: 'Completed',
@@ -186,9 +262,19 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
       },
       {
         label: 'Total Scope',
-        data: burnupData.map(d => d.scope),
+        data: extendedDateLabels.map(date => {
+          const matchingData = burnupData.find(d => d.date === date);
+          return matchingData ? matchingData.scope : totalPoints;
+        }),
         borderColor: 'rgba(0, 82, 204, 1)',
         backgroundColor: 'rgba(0, 82, 204, 0.1)',
+        fill: false,
+      },
+      {
+        label: 'Projected Completion',
+        data: projectedData,
+        borderColor: 'rgba(255, 145, 0, 1)',
+        borderDash: [5, 5],
         fill: false,
       }
     ],
@@ -216,6 +302,8 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     assigneeData,
     totalAssignees: assigneeMap.size,
     assigneeChartData,
+    projectedCompletionDate,
+    velocity,
   };
 };
 
