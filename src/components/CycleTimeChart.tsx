@@ -17,8 +17,17 @@ export function CycleTimeChart({ data, height = 350 }: CycleTimeChartProps) {
 
     const renderChart = async () => {
       try {
-        // Dynamically import Chart.js to avoid SSR issues
+        // Dynamically import Chart.js and required adapters
         const { Chart, registerables } = await import('chart.js');
+        
+        // Import and register date adapter - this is key for time scale
+        const { _adapters } = await import('chart.js');
+        const { default: AdapterDateFns } = await import('chartjs-adapter-date-fns');
+        
+        if (_adapters && !_adapters._date) {
+          _adapters._date = AdapterDateFns;
+        }
+        
         Chart.register(...registerables);
         
         // Destroy previous chart if it exists
@@ -60,7 +69,8 @@ export function CycleTimeChart({ data, height = 350 }: CycleTimeChartProps) {
               x: {
                 type: 'time',
                 time: {
-                  unit: 'day'
+                  unit: 'day',
+                  tooltipFormat: 'MM/dd/yyyy'
                 },
                 title: {
                   display: true,

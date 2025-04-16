@@ -17,13 +17,18 @@ export function GanttChart({ data, height = 350 }: GanttChartProps) {
 
     const renderChart = async () => {
       try {
-        // Dynamically import Chart.js to avoid SSR issues
+        // Dynamically import Chart.js and required adapters
         const { Chart, registerables } = await import('chart.js');
+        
+        // Import and register date adapter - this is key for time scale
+        const { _adapters } = await import('chart.js');
+        const { default: AdapterDateFns } = await import('chartjs-adapter-date-fns');
+        
+        if (_adapters && !_adapters._date) {
+          _adapters._date = AdapterDateFns;
+        }
+        
         Chart.register(...registerables);
-
-        // Import annotation plugin
-        const annotationPlugin = await import('chartjs-plugin-annotation');
-        Chart.register(annotationPlugin.default);
         
         // Destroy previous chart if it exists
         if (chartInstance.current) {
@@ -40,9 +45,9 @@ export function GanttChart({ data, height = 350 }: GanttChartProps) {
           type: 'bar',
           data: data as any, // Cast to any to avoid TypeScript errors
           options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            indexAxis: 'y' as const, // Horizontal bars
             plugins: {
               title: {
                 display: true,
@@ -51,22 +56,28 @@ export function GanttChart({ data, height = 350 }: GanttChartProps) {
               tooltip: {
                 callbacks: {
                   label: function(context) {
-                    const label = context.dataset.label || '';
-                    const startDate = new Date(context.parsed._custom?.start).toLocaleDateString();
-                    const endDate = new Date(context.parsed._custom?.end).toLocaleDateString();
-                    return `${label}: ${startDate} - ${endDate}`;
+                    const dataPoint = context.raw as any;
+                    if (dataPoint && dataPoint._custom) {
+                      const start = new Date(dataPoint._custom.start);
+                      const end = new Date(dataPoint._custom.end);
+                      const startStr = start.toLocaleDateString();
+                      const endStr = end.toLocaleDateString();
+                      const days = Math.round((end.getTime() - start.getTime()) / (24*60*60*1000));
+                      return `${startStr} to ${endStr} (${days} days)`;
+                    }
+                    return '';
                   }
                 }
               },
               legend: {
-                position: 'top',
+                display: false,
               }
             },
             scales: {
               x: {
                 type: 'time',
                 time: {
-                  unit: 'day',
+                  unit: 'day'
                 },
                 title: {
                   display: true,
@@ -77,6 +88,9 @@ export function GanttChart({ data, height = 350 }: GanttChartProps) {
                 title: {
                   display: true,
                   text: 'Issues'
+                },
+                ticks: {
+                  autoSkip: false
                 }
               }
             }
