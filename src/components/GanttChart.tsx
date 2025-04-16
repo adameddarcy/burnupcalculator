@@ -126,7 +126,7 @@ export function GanttChart({ data, height = 400 }: GanttChartProps) {
                 borderWidth: 1,
                 padding: 10,
                 cornerRadius: 4,
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                // Removed the invalid boxShadow property
                 callbacks: {
                   label: function(context) {
                     const dataPoint = context.raw as any;
