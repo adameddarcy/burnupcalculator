@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 
 /**
@@ -19,8 +20,8 @@ export const initializePdfDocument = (): {
   // Get current date in YYYY-MM-DD format
   const dateStr = new Date().toISOString().split('T')[0];
   
-  // Add title with emoji
-  const title = '📈 Jira Epic Metrics Report 📊';
+  // Add title without emoji
+  const title = 'Jira Epic Metrics Report';
   doc.setFontSize(20);
   doc.text(title, pageWidth / 2, 20, { align: 'center' });
   

@@ -12,31 +12,31 @@ export const addSummaryMetricsToPdf = (
   yPos: number
 ): number => {
   doc.setFontSize(16);
-  doc.text('📊 Summary Metrics', margin, yPos);
+  doc.text('Summary Metrics', margin, yPos);
   yPos += 10;
   
   doc.setFontSize(12);
-  doc.text(`📝 Total Story Points: ${processedData.totalPoints}`, margin, yPos);
+  doc.text(`Total Story Points: ${processedData.totalPoints}`, margin, yPos);
   yPos += 7;
   
-  doc.text(`✅ Completed Points: ${processedData.completedPoints}`, margin, yPos);
+  doc.text(`Completed Points: ${processedData.completedPoints}`, margin, yPos);
   yPos += 7;
   
-  doc.text(`🎯 Completion: ${Math.round((processedData.completedPoints / processedData.totalPoints) * 100)}%`, margin, yPos);
+  doc.text(`Completion: ${Math.round((processedData.completedPoints / processedData.totalPoints) * 100)}%`, margin, yPos);
   yPos += 7;
   
-  doc.text(`🔢 Total Issues: ${processedData.issues.length}`, margin, yPos);
+  doc.text(`Total Issues: ${processedData.issues.length}`, margin, yPos);
   yPos += 7;
   
   const effectiveTeamMembers = customTeamMembers !== null 
     ? customTeamMembers
     : processedData?.totalAssignees || 0;
   
-  doc.text(`👥 Team Members: ${effectiveTeamMembers}`, margin, yPos);
+  doc.text(`Team Members: ${effectiveTeamMembers}`, margin, yPos);
   yPos += 7;
 
   if (processedData.velocity) {
-    doc.text(`🚀 Team Velocity: ${processedData.velocity.toFixed(1)} points/day`, margin, yPos);
+    doc.text(`Team Velocity: ${processedData.velocity.toFixed(1)} points/day`, margin, yPos);
     yPos += 7;
   }
 
@@ -44,10 +44,10 @@ export const addSummaryMetricsToPdf = (
     const today = new Date();
     const daysToCompletion = Math.ceil((processedData.projectedCompletionDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    doc.text(`📅 Projected Completion: ${processedData.projectedCompletionDate.toLocaleDateString()}`, margin, yPos);
+    doc.text(`Projected Completion: ${processedData.projectedCompletionDate.toLocaleDateString()}`, margin, yPos);
     yPos += 7;
     
-    doc.text(`⏱️ Days until completion: ${daysToCompletion > 0 ? daysToCompletion : 'Overdue!'}`, margin, yPos);
+    doc.text(`Days until completion: ${daysToCompletion > 0 ? daysToCompletion : 'Overdue!'}`, margin, yPos);
     yPos += 7;
   }
   
@@ -72,7 +72,7 @@ const addFunFactsToPdf = (
   yPos: number
 ): number => {
   doc.setFontSize(14);
-  doc.text("✨ Fun Facts", margin, yPos);
+  doc.text("Fun Facts", margin, yPos);
   yPos += 8;
   
   doc.setFontSize(10);
@@ -80,23 +80,16 @@ const addFunFactsToPdf = (
   // Find the week with the most completed points
   const weeklyCompletion = findWeekWithMostPoints(processedData);
   if (weeklyCompletion) {
-    doc.text(`🏆 Most productive week: ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)}`, margin, yPos);
+    doc.text(`Most productive week: ${formatDateRange(weeklyCompletion.weekStart, weeklyCompletion.weekEnd)}`, margin, yPos);
     yPos += 5;
     doc.text(`   ${weeklyCompletion.points} points completed!`, margin, yPos);
-    yPos += 8;
-  }
-  
-  // Find the most productive team member
-  const mostProductiveAssignee = findMostProductiveAssignee(processedData.assigneeData);
-  if (mostProductiveAssignee) {
-    doc.text(`🌟 MVP: ${mostProductiveAssignee.name} with ${mostProductiveAssignee.completedPoints} points completed`, margin, yPos);
     yPos += 8;
   }
   
   // Calculate average cycle time
   if (processedData.issues.length > 0 && processedData.issues.some(issue => issue.resolved)) {
     const avgCycleTime = calculateAverageCycleTime(processedData.issues);
-    doc.text(`⏱️ Average time to complete an issue: ${avgCycleTime.toFixed(1)} days`, margin, yPos);
+    doc.text(`Average time to complete an issue: ${avgCycleTime.toFixed(1)} days`, margin, yPos);
     yPos += 8;
   }
   

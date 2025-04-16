@@ -3,17 +3,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
- * Maps chart IDs to emoji icons
- */
-const chartEmojis: Record<string, string> = {
-  'burnup-chart': '📈',
-  'burndown-chart': '📉',
-  'cumulative-flow-chart': '🌊',
-  'cycle-time-chart': '⏱️',
-  'velocity-chart': '🚀',
-};
-
-/**
  * Captures a chart from the DOM and adds it to a PDF document
  */
 export const addChartToPdf = async (
@@ -44,10 +33,9 @@ export const addChartToPdf = async (
       yPos = 20;
     }
     
-    // Add chart title with emoji
-    const emoji = chartEmojis[chartId] || '📊';
+    // Add chart title without emoji
     doc.setFontSize(14);
-    doc.text(`${emoji} ${title}`, margin, yPos);
+    doc.text(`${title}`, margin, yPos);
     yPos += 8;
     
     // Add chart image
@@ -60,4 +48,3 @@ export const addChartToPdf = async (
     return null;
   }
 };
-
