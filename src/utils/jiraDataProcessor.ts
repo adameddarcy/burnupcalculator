@@ -59,7 +59,7 @@ const parseStoryPoints = (row: any): number => {
  * Process Jira issues into burnup and burndown chart data
  * with focus on assignees, created dates, and resolved dates
  */
-export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
+export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number): ProcessedData => {
   // Sort issues by created date
   const sortedIssues = [...issues].sort((a, b) => 
     new Date(a.created).getTime() - new Date(b.created).getTime()
@@ -135,10 +135,20 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     const remainingPoints = totalPoints - completedPoints;
     
     // Calculate days to completion
-    const daysToCompletion = velocity > 0 ? Math.ceil(remainingPoints / velocity) : 0;
+    // If customTeamMembers is provided and greater than 0, adjust velocity calculation
+    let adjustedVelocity = velocity;
+    const actualTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
+    
+    // Scale velocity based on team size if we have customTeamMembers and actual team members
+    if (customTeamMembers !== undefined && assigneeMap.size > 0) {
+      adjustedVelocity = velocity * (customTeamMembers / assigneeMap.size);
+    }
+    
+    // Calculate days to completion with adjusted velocity
+    const daysToCompletion = adjustedVelocity > 0 ? Math.ceil(remainingPoints / adjustedVelocity) : 0;
     
     // Calculate projected completion date if we have velocity
-    if (velocity > 0) {
+    if (adjustedVelocity > 0) {
       const projectedDate = new Date();
       projectedDate.setDate(projectedDate.getDate() + daysToCompletion);
       projectedCompletionDate = projectedDate.toISOString().split('T')[0];
@@ -169,6 +179,12 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
   const projectedData: number[] = [];
   
   if (velocity > 0) {
+    // Get adjusted velocity for projection
+    let adjustedVelocity = velocity;
+    if (customTeamMembers !== undefined && assigneeMap.size > 0) {
+      adjustedVelocity = velocity * (customTeamMembers / assigneeMap.size);
+    }
+    
     extendedDateLabels.forEach(date => {
       const currentDate = new Date(date);
       const lastKnownDate = new Date(dateLabels[dateLabels.length - 1]);
@@ -179,7 +195,7 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
       } else {
         // For future dates, calculate projected completion based on velocity
         const daysSinceLastKnown = (currentDate.getTime() - lastKnownDate.getTime()) / (1000 * 60 * 60 * 24);
-        const projectedPoints = completedPoints + (velocity * daysSinceLastKnown);
+        const projectedPoints = completedPoints + (adjustedVelocity * daysSinceLastKnown);
         projectedData.push(Math.min(projectedPoints, totalPoints)); // Cap at total points
       }
     });
@@ -293,6 +309,9 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     ],
   };
 
+  // Use customTeamMembers if provided, otherwise use the count from assigneeMap
+  const effectiveTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
+
   return {
     burnup: burnupChartData,
     burndown: burndownChartData,
@@ -300,7 +319,7 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     totalPoints,
     issues: sortedIssues,
     assigneeData,
-    totalAssignees: assigneeMap.size,
+    totalAssignees: effectiveTeamMembers,
     assigneeChartData,
     projectedCompletionDate,
     velocity,
