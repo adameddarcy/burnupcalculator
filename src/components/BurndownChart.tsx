@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartData } from '@/types/jira';
+import type { ChartData as ChartJsData, ChartTypeRegistry } from 'chart.js';
 
 interface BurndownChartProps {
   data: ChartData;
@@ -63,9 +64,15 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
           }
         }
 
+        // Properly cast data to Chart.js expected type
+        const chartData: ChartJsData<keyof ChartTypeRegistry, any[], unknown> = {
+          labels: data.labels,
+          datasets: data.datasets
+        };
+
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data as any, // Explicitly cast to any to bypass type checking
+          data: chartData,
           options: {
             responsive: true,
             maintainAspectRatio: false,
