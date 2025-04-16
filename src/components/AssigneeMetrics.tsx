@@ -18,60 +18,71 @@ export function AssigneeMetricsChart({ data, totalPoints, chartData, height = 35
     if (!chartRef.current || !chartData) return;
 
     const renderChart = async () => {
-      // Dynamically import Chart.js to avoid SSR issues
-      const { Chart, registerables } = await import('chart.js');
-      Chart.register(...registerables);
+      try {
+        // Dynamically import Chart.js to avoid SSR issues
+        const { Chart, registerables } = await import('chart.js');
+        Chart.register(...registerables);
 
-      // Destroy previous chart if it exists
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
+        // Destroy previous chart if it exists
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
 
-      const ctx = chartRef.current.getContext('2d');
-      if (!ctx) return;
+        const ctx = chartRef.current.getContext('2d');
+        if (!ctx) {
+          console.error('Failed to get canvas context');
+          return;
+        }
 
-      chartInstance.current = new Chart(ctx, {
-        type: 'bar',
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Assignee Metrics'
-            },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-            },
-            legend: {
-              position: 'top',
-            },
-          },
-          scales: {
-            x: {
+        chartInstance.current = new Chart(ctx, {
+          type: 'bar',
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
               title: {
                 display: true,
-                text: 'Assignee'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Story Points'
+                text: 'Assignee Metrics'
               },
-              beginAtZero: true
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+              },
+              legend: {
+                position: 'top',
+              },
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Assignee'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Story Points'
+                },
+                beginAtZero: true
+              }
             }
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Error rendering Assignee chart:', error);
+      }
     };
 
-    renderChart();
+    // Add a small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      renderChart();
+    }, 100);
 
     // Cleanup function
     return () => {
+      clearTimeout(timer);
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
@@ -84,7 +95,7 @@ export function AssigneeMetricsChart({ data, totalPoints, chartData, height = 35
         <CardTitle>Assignee Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <div style={{ height: `${height}px` }}>
+        <div style={{ height: `${height}px` }} className="mb-4">
           <canvas id="assignee-chart" ref={chartRef} />
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -101,7 +112,7 @@ export function AssigneeMetricsChart({ data, totalPoints, chartData, height = 35
               <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
                 <div 
                   className="bg-primary h-2.5 rounded-full" 
-                  style={{ width: `${assignee.completedPoints / assignee.assignedPoints * 100}%` }}
+                  style={{ width: `${assignee.assignedPoints > 0 ? (assignee.completedPoints / assignee.assignedPoints * 100) : 0}%` }}
                 ></div>
               </div>
             </div>

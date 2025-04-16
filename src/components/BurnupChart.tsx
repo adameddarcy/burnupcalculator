@@ -17,97 +17,108 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
     if (!chartRef.current || !data) return;
 
     const renderChart = async () => {
-      // Dynamically import Chart.js to avoid SSR issues
-      const { Chart, registerables } = await import('chart.js');
-      Chart.register(...registerables);
-      
-      // Import and register annotation plugin properly
-      const annotationPlugin = await import('chartjs-plugin-annotation');
-      Chart.register(annotationPlugin.default);
+      try {
+        // Dynamically import Chart.js to avoid SSR issues
+        const { Chart, registerables } = await import('chart.js');
+        Chart.register(...registerables);
+        
+        // Import and register annotation plugin properly
+        const annotationPlugin = await import('chartjs-plugin-annotation');
+        Chart.register(annotationPlugin.default);
 
-      // Destroy previous chart if it exists
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
+        // Destroy previous chart if it exists
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
 
-      const ctx = chartRef.current.getContext('2d');
-      if (!ctx) return;
+        const ctx = chartRef.current.getContext('2d');
+        if (!ctx) {
+          console.error('Failed to get canvas context');
+          return;
+        }
 
-      // Find the index of the projected completion date in the labels array
-      const projectedDateIndex = projectedCompletionDate 
-        ? data.labels.findIndex(label => label === projectedCompletionDate)
-        : -1;
+        // Find the index of the projected completion date in the labels array
+        const projectedDateIndex = projectedCompletionDate 
+          ? data.labels.findIndex(label => label === projectedCompletionDate)
+          : -1;
 
-      // Create chart options
-      const chartOptions: any = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Epic Burnup Chart'
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-          },
-          legend: {
-            position: 'top',
-          }
-        },
-        scales: {
-          x: {
+        // Create chart options
+        const chartOptions: any = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
             title: {
               display: true,
-              text: 'Date'
+              text: 'Epic Burnup Chart'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+            },
+            legend: {
+              position: 'top',
             }
           },
-          y: {
-            title: {
-              display: true,
-              text: 'Story Points'
-            },
-            beginAtZero: true
-          }
-        }
-      };
-      
-      // Add annotations if we have a projected completion date
-      if (projectedDateIndex !== -1) {
-        chartOptions.plugins.annotation = {
-          annotations: {
-            projectedCompletion: {
-              type: 'line',
-              xMin: projectedDateIndex,
-              xMax: projectedDateIndex,
-              borderColor: 'rgba(255, 99, 132, 0.8)',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              label: {
+          scales: {
+            x: {
+              title: {
                 display: true,
-                content: 'Projected Completion',
-                position: 'start',
-                backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                font: {
-                  weight: 'bold'
-                }
+                text: 'Date'
               }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Story Points'
+              },
+              beginAtZero: true
             }
           }
         };
-      }
+        
+        // Add annotations if we have a projected completion date and it's in the labels
+        if (projectedDateIndex !== -1) {
+          chartOptions.plugins.annotation = {
+            annotations: {
+              projectedCompletion: {
+                type: 'line',
+                xMin: projectedDateIndex,
+                xMax: projectedDateIndex,
+                borderColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                label: {
+                  display: true,
+                  content: 'Projected Completion',
+                  position: 'start',
+                  backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                  font: {
+                    weight: 'bold'
+                  }
+                }
+              }
+            }
+          };
+        }
 
-      chartInstance.current = new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: chartOptions
-      });
+        chartInstance.current = new Chart(ctx, {
+          type: 'line',
+          data: data,
+          options: chartOptions
+        });
+      } catch (error) {
+        console.error('Error rendering Burnup chart:', error);
+      }
     };
 
-    renderChart();
+    // Add a small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      renderChart();
+    }, 100);
 
     // Cleanup function
     return () => {
+      clearTimeout(timer);
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
