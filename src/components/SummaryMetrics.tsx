@@ -23,6 +23,7 @@ interface SummaryMetricsProps {
   totalAssignees?: number;
   projectedCompletionDate?: string;
   velocity?: number;
+  onTeamMembersChange?: (teamMembers: number) => void;
 }
 
 const teamMembersSchema = z.object({
@@ -38,7 +39,8 @@ export function SummaryMetrics({
   completionPercentage,
   totalAssignees = 0,
   projectedCompletionDate,
-  velocity
+  velocity,
+  onTeamMembersChange
 }: SummaryMetricsProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [customTeamMembers, setCustomTeamMembers] = useState<number | undefined>(undefined);
@@ -55,6 +57,11 @@ export function SummaryMetrics({
   const onSubmit = (data: TeamMembersFormValues) => {
     setCustomTeamMembers(data.teamMembers);
     setIsEditing(false);
+    
+    // Notify parent component about the team members change
+    if (onTeamMembersChange) {
+      onTeamMembersChange(data.teamMembers);
+    }
   };
 
   // Format projected date if available

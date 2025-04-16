@@ -17,11 +17,24 @@ import { Download, BarChart3, Users } from "lucide-react";
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
+  const [customTeamMembers, setCustomTeamMembers] = useState<number | null>(null);
 
   const handleDataLoaded = (data: JiraIssue[]) => {
     setJiraData(data);
     const processed = processJiraData(data);
     setProcessedData(processed);
+    // Reset custom team members when new data is loaded
+    setCustomTeamMembers(null);
+  };
+
+  const handleTeamMembersChange = (teamMembers: number) => {
+    setCustomTeamMembers(teamMembers);
+    
+    // Recalculate processed data with new team members count
+    if (jiraData) {
+      const updatedProcessedData = processJiraData(jiraData, teamMembers);
+      setProcessedData(updatedProcessedData);
+    }
   };
 
   const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee') => {
@@ -41,6 +54,10 @@ export default function Index() {
   const completionPercentage = processedData 
     ? (processedData.completedPoints / processedData.totalPoints) * 100 
     : 0;
+
+  const effectiveTeamMembers = customTeamMembers !== null 
+    ? customTeamMembers
+    : processedData?.totalAssignees || 0;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -69,6 +86,7 @@ export default function Index() {
                 totalAssignees={processedData?.totalAssignees || 0}
                 projectedCompletionDate={processedData?.projectedCompletionDate}
                 velocity={processedData?.velocity}
+                onTeamMembersChange={handleTeamMembersChange}
               />
             </div>
 
@@ -156,7 +174,7 @@ export default function Index() {
                       chartData={processedData.assigneeChartData}
                     />
                     <div className="mt-4 text-sm text-muted-foreground">
-                      <p>Total Assignees: {processedData.totalAssignees}</p>
+                      <p>Total Assignees: {effectiveTeamMembers}</p>
                     </div>
                   </div>
                 )}
