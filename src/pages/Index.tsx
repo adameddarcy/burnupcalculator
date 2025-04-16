@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FileUpload } from "@/components/FileUpload";
 import { BurnupChart } from "@/components/BurnupChart";
@@ -26,14 +25,12 @@ export default function Index() {
     setJiraData(data);
     const processed = processJiraData(data);
     setProcessedData(processed);
-    // Reset custom team members when new data is loaded
     setCustomTeamMembers(null);
   };
 
   const handleTeamMembersChange = (teamMembers: number) => {
     setCustomTeamMembers(teamMembers);
     
-    // Recalculate processed data with new team members count
     if (jiraData) {
       const updatedProcessedData = processJiraData(jiraData, teamMembers);
       setProcessedData(updatedProcessedData);
@@ -175,7 +172,10 @@ export default function Index() {
                           />
                         </div>
                         <div id="burndown-chart-container">
-                          <BurndownChart data={processedData.burndown} />
+                          <BurndownChart 
+                            data={processedData.burndown} 
+                            projectedCompletionDate={processedData.projectedCompletionDate}
+                          />
                         </div>
                       </>
                     )}

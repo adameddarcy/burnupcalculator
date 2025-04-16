@@ -5,10 +5,11 @@ import { ChartData } from '@/types/jira';
 
 interface BurndownChartProps {
   data: ChartData;
+  projectedCompletionDate?: string;
   height?: number;
 }
 
-export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
+export function BurndownChart({ data, projectedCompletionDate, height = 350 }: BurndownChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<any>(null);
 
@@ -36,6 +37,24 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
           return;
         }
 
+        // Create annotations for projected completion date if it exists
+        const annotations = {};
+        if (projectedCompletionDate) {
+          annotations['projectedCompletion'] = {
+            type: 'line',
+            xMin: projectedCompletionDate,
+            xMax: projectedCompletionDate,
+            borderColor: 'rgba(255, 99, 132, 0.8)',
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              enabled: true,
+              content: 'Projected Completion',
+              position: 'start'
+            }
+          };
+        }
+
         chartInstance.current = new Chart(ctx, {
           type: 'line',
           data: data as any, // Cast to any to avoid TypeScript errors
@@ -55,7 +74,7 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
                 position: 'top',
               },
               annotation: {
-                annotations: {} // Initialize empty annotations to prevent undefined errors
+                annotations: annotations
               }
             },
             scales: {
@@ -92,7 +111,7 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
         chartInstance.current.destroy();
       }
     };
-  }, [data]);
+  }, [data, projectedCompletionDate]);
 
   return (
     <Card className="w-full">

@@ -1,4 +1,3 @@
-
 import Papa from 'papaparse';
 import { JiraIssue, ProcessedData, ChartData, AssigneeMetrics } from '@/types/jira';
 
@@ -228,18 +227,40 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     });
   }
 
-  // Generate data for burndown chart
-  const burndownData = dateLabels.map(date => {
+  // Generate data for burndown chart - Now using extended date labels
+  const burndownData = extendedDateLabels.map(date => {
     const dateTime = new Date(date).getTime();
+    const lastKnownDate = new Date(dateLabels[dateLabels.length - 1]);
     
-    // Count remaining points after this date
-    const completedByDate = sortedIssues
-      .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
-      .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
-    
-    const remainingPoints = totalPoints - completedByDate;
-    
-    return { date, remaining: remainingPoints };
+    // For dates we have actual data
+    if (new Date(date) <= lastKnownDate) {
+      // Count remaining points after this date (for known dates)
+      const completedByDate = sortedIssues
+        .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
+        .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
+      
+      const remainingPoints = totalPoints - completedByDate;
+      return { date, remaining: remainingPoints };
+    } else {
+      // For projected future dates
+      // Calculate projected completion
+      const daysSinceLastKnown = (dateTime - lastKnownDate.getTime()) / (1000 * 60 * 60 * 24);
+      let adjustedVelocity = velocity;
+      if (customTeamMembers !== undefined && assigneeMap.size > 0) {
+        adjustedVelocity = velocity * (customTeamMembers / assigneeMap.size);
+      }
+      
+      // Get the last known remaining points
+      const lastKnownIndex = dateLabels.length - 1;
+      const lastDate = dateLabels[lastKnownIndex];
+      const lastKnownRemaining = burndownData.find(d => d.date === lastDate)?.remaining || 
+        (totalPoints - completedPoints);
+      
+      // Project remaining points based on velocity
+      const projectedRemaining = Math.max(0, lastKnownRemaining - (adjustedVelocity * daysSinceLastKnown));
+      
+      return { date, remaining: projectedRemaining };
+    }
   });
 
   // Convert assignee map to array for the response
@@ -297,15 +318,28 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
   };
 
   const burndownChartData: ChartData = {
-    labels: dateLabels,
+    labels: extendedDateLabels,
     datasets: [
       {
-        label: 'Remaining',
-        data: burndownData.map(d => d.remaining),
+        label: 'Actual Remaining',
+        data: burndownData.filter((d, i) => i < dateLabels.length).map(d => d.remaining),
         backgroundColor: 'rgba(255, 171, 0, 0.2)',
         borderColor: 'rgba(255, 171, 0, 1)',
         fill: true,
       },
+      {
+        label: 'Projected Remaining',
+        data: burndownData.map((d, i) => {
+          // For known dates, return null
+          if (i < dateLabels.length) return null;
+          // For projected dates, return the value
+          return d.remaining;
+        }),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        borderDash: [5, 5],
+        fill: true,
+      }
     ],
   };
 
