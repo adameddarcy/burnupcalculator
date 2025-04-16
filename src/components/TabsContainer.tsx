@@ -6,7 +6,7 @@ import { AssigneesTab } from "./tabs/AssigneesTab";
 import { DataTableTab } from "./tabs/DataTableTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, ChartBarStacked, Download, FilePdf } from "lucide-react";
+import { BarChart3, Users, ChartBarStacked, Download, FileText } from "lucide-react";
 import { JiraIssue, ProcessedData } from "@/types/jira";
 import { generateFullReport } from "@/utils/pdfExport";
 import { toast } from "@/components/ui/use-toast";
@@ -49,7 +49,7 @@ export function TabsContainer({
       toast({
         title: "Report generated successfully",
         description: "Your PDF report has been downloaded.",
-        variant: "success",
+        variant: "default", // Changed from "success" to "default"
       });
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -90,7 +90,7 @@ export function TabsContainer({
             disabled={isGeneratingPdf}
             className="flex items-center gap-2"
           >
-            <FilePdf className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             {isGeneratingPdf ? "Generating PDF..." : "Export PDF Report"}
           </Button>
           <Button 
