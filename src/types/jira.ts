@@ -27,3 +27,4 @@ export interface ProcessedData {
   totalPoints: number;
   issues: JiraIssue[];
 }
+

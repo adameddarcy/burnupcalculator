@@ -27,18 +27,19 @@ export function FileUpload({ onDataLoaded }: FileUploadProps) {
 
     try {
       const text = await file.text();
+      
+      // Perform basic validation
+      const validation = Papa.parse(text, { header: true });
+      if (!validateJiraCSV(validation.data)) {
+        throw new Error('The CSV file does not appear to be a valid Jira export. Please ensure it contains required fields like Issue key, Summary, Status, and Created.');
+      }
+      
       const parsedData = parseJiraCSV(text);
       
       if (parsedData.length === 0) {
-        throw new Error('No data found in the CSV file');
+        throw new Error('No valid Jira issues found in the CSV file');
       }
 
-      // Perform additional validation
-      const validation = Papa.parse(text, { header: true });
-      if (!validateJiraCSV(validation.data)) {
-        throw new Error('The CSV file does not appear to be a valid Jira export');
-      }
-      
       onDataLoaded(parsedData);
     } catch (err: any) {
       setError(err.message || 'Failed to parse CSV file');
@@ -84,3 +85,4 @@ export function FileUpload({ onDataLoaded }: FileUploadProps) {
     </div>
   );
 }
+

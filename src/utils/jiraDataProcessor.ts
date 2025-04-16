@@ -17,18 +17,40 @@ export const parseJiraCSV = (csvData: string): JiraIssue[] => {
 
   // Map CSV columns to our JiraIssue interface
   return result.data.map((row: any) => {
-    // Adjust these field mappings based on actual Jira CSV export format
+    // Support standard Jira export column names
     return {
-      key: row['Issue key'] || row['Key'] || '',
+      key: row['Issue key'] || '',
       summary: row['Summary'] || '',
       status: row['Status'] || '',
       created: row['Created'] || '',
       resolved: row['Resolved'] || null,
-      storyPoints: row['Story Points'] ? parseFloat(row['Story Points']) : 
-                  row['Story point estimate'] ? parseFloat(row['Story point estimate']) : 0,
+      // Look for Story Points in various possible column names
+      storyPoints: parseStoryPoints(row),
       epic: row['Epic Link'] || row['Epic'] || '',
     };
   }).filter((issue: JiraIssue) => issue.key !== '');
+};
+
+/**
+ * Helper function to parse story points from various column formats
+ */
+const parseStoryPoints = (row: any): number => {
+  // Check multiple possible column names for Story Points
+  const storyPointFields = [
+    'Story Points', 
+    'Story point estimate', 
+    'Story Points Estimate',
+    'Story Point Estimate',
+    'Custom field (Story Points)'
+  ];
+  
+  for (const field of storyPointFields) {
+    if (row[field] && !isNaN(parseFloat(row[field]))) {
+      return parseFloat(row[field]);
+    }
+  }
+  
+  return 0; // Default to 0 if no story points found
 };
 
 /**
@@ -142,20 +164,16 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
 export const validateJiraCSV = (data: any[]): boolean => {
   if (data.length === 0) return false;
   
-  // Check for common Jira fields in the first row
+  // Check for required Jira fields in the first row
   const firstRow = data[0];
-  const requiredFields = ['Key', 'Summary', 'Status'];
-  const alternativeFields = ['Issue key', 'Issue summary', 'Status'];
+  const requiredFields = ['Summary', 'Issue key', 'Status', 'Created'];
   
-  // Check if standard fields exist
-  const hasRequiredFields = requiredFields.every(field => 
+  // Count how many required fields exist in the CSV
+  const foundFieldsCount = requiredFields.filter(field => 
     Object.keys(firstRow).some(key => key === field)
-  );
+  ).length;
   
-  // Check if alternative field names exist
-  const hasAlternativeFields = alternativeFields.every(field => 
-    Object.keys(firstRow).some(key => key === field)
-  );
-  
-  return hasRequiredFields || hasAlternativeFields;
+  // If we found at least 3 of 4 required fields, consider it valid
+  return foundFieldsCount >= 3;
 };
+
