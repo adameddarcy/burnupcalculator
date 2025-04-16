@@ -1,7 +1,19 @@
 
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, FileBarChart, Users, Calendar, TrendingUp } from 'lucide-react';
+import { CheckCircle, Clock, FileBarChart, Users, Calendar, TrendingUp, Edit2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+} from '@/components/ui/form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface SummaryMetricsProps {
   totalPoints: number;
@@ -13,6 +25,12 @@ interface SummaryMetricsProps {
   velocity?: number;
 }
 
+const teamMembersSchema = z.object({
+  teamMembers: z.number().int().positive()
+});
+
+type TeamMembersFormValues = z.infer<typeof teamMembersSchema>;
+
 export function SummaryMetrics({ 
   totalPoints, 
   completedPoints, 
@@ -22,6 +40,23 @@ export function SummaryMetrics({
   projectedCompletionDate,
   velocity
 }: SummaryMetricsProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [customTeamMembers, setCustomTeamMembers] = useState<number | undefined>(undefined);
+
+  const displayedTeamMembers = customTeamMembers !== undefined ? customTeamMembers : totalAssignees;
+
+  const form = useForm<TeamMembersFormValues>({
+    resolver: zodResolver(teamMembersSchema),
+    defaultValues: {
+      teamMembers: displayedTeamMembers
+    }
+  });
+
+  const onSubmit = (data: TeamMembersFormValues) => {
+    setCustomTeamMembers(data.teamMembers);
+    setIsEditing(false);
+  };
+
   // Format projected date if available
   const formattedDate = projectedCompletionDate 
     ? new Date(projectedCompletionDate).toLocaleDateString(undefined, {
@@ -68,8 +103,43 @@ export function SummaryMetrics({
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Users className="h-4 w-4" /> 
             <span className="text-sm font-medium">Team Members</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-5 w-5 ml-auto" 
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Edit2 className="h-3 w-3" />
+            </Button>
           </div>
-          <div className="text-2xl font-bold">{totalAssignees}</div>
+          
+          {isEditing ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2 items-center">
+                <FormField
+                  control={form.control}
+                  name="teamMembers"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          autoFocus
+                          className="h-8"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" size="sm" className="h-8">Save</Button>
+              </form>
+            </Form>
+          ) : (
+            <div className="text-2xl font-bold">{displayedTeamMembers}</div>
+          )}
         </CardContent>
       </Card>
 
