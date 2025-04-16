@@ -134,7 +134,10 @@ export default function Index() {
                   {processedData && (
                     <>
                       <div id="burnup-chart-container">
-                        <BurnupChart data={processedData.burnup} />
+                        <BurnupChart 
+                          data={processedData.burnup} 
+                          projectedCompletionDate={processedData.projectedCompletionDate}
+                        />
                       </div>
                       <div id="burndown-chart-container">
                         <BurndownChart data={processedData.burndown} />

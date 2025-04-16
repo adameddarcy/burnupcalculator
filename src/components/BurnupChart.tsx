@@ -6,9 +6,10 @@ import { ChartData } from '@/types/jira';
 interface BurnupChartProps {
   data: ChartData;
   height?: number;
+  projectedCompletionDate?: string;
 }
 
-export function BurnupChart({ data, height = 350 }: BurnupChartProps) {
+export function BurnupChart({ data, height = 350, projectedCompletionDate }: BurnupChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<any>(null);
 
@@ -28,6 +29,34 @@ export function BurnupChart({ data, height = 350 }: BurnupChartProps) {
       const ctx = chartRef.current.getContext('2d');
       if (!ctx) return;
 
+      // Find the index of the projected completion date in the labels array
+      const projectedDateIndex = projectedCompletionDate 
+        ? data.labels.findIndex(label => label === projectedCompletionDate)
+        : -1;
+
+      // Create vertical line annotation if we have a projected completion date
+      const annotations: any = {};
+      
+      if (projectedDateIndex !== -1) {
+        annotations.projectedCompletion = {
+          type: 'line',
+          xMin: projectedDateIndex,
+          xMax: projectedDateIndex,
+          borderColor: 'rgba(255, 99, 132, 0.8)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          label: {
+            enabled: true,
+            content: 'Projected Completion',
+            position: 'start',
+            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+            font: {
+              weight: 'bold',
+            }
+          }
+        };
+      }
+
       chartInstance.current = new Chart(ctx, {
         type: 'line',
         data: data,
@@ -46,6 +75,9 @@ export function BurnupChart({ data, height = 350 }: BurnupChartProps) {
             legend: {
               position: 'top',
             },
+            annotation: annotations && Object.keys(annotations).length > 0 ? {
+              annotations: annotations
+            } : undefined,
           },
           scales: {
             x: {
@@ -74,7 +106,7 @@ export function BurnupChart({ data, height = 350 }: BurnupChartProps) {
         chartInstance.current.destroy();
       }
     };
-  }, [data]);
+  }, [data, projectedCompletionDate]);
 
   return (
     <Card className="w-full">
@@ -85,6 +117,18 @@ export function BurnupChart({ data, height = 350 }: BurnupChartProps) {
         <div style={{ height: `${height}px` }}>
           <canvas id="burnup-chart" ref={chartRef} />
         </div>
+        {projectedCompletionDate && (
+          <div className="mt-3 text-sm flex items-center gap-1">
+            <span className="font-medium">Projected Completion:</span>
+            <span>
+              {new Date(projectedCompletionDate).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

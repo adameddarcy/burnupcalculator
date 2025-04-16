@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, FileBarChart, Users, Calendar } from 'lucide-react';
+import { CheckCircle, Clock, FileBarChart, Users, Calendar, TrendingUp } from 'lucide-react';
 
 interface SummaryMetricsProps {
   totalPoints: number;
@@ -85,18 +85,26 @@ export function SummaryMetrics({
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <TrendingUp className="h-4 w-4" />
+            <span className="text-sm font-medium">Team Velocity</span>
+          </div>
+          <div className="text-2xl font-bold">
+            {velocity ? `${velocity.toFixed(1)}` : 'N/A'}
+            <span className="text-sm text-muted-foreground ml-1">points/day</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Calendar className="h-4 w-4" />
             <span className="text-sm font-medium">Projected Completion</span>
           </div>
-          <div className="text-xl font-bold">{formattedDate}</div>
-          {velocity && (
-            <div className="text-sm text-muted-foreground mt-1">
-              Team Velocity: {velocity.toFixed(1)} points/day
-            </div>
-          )}
+          <div className="text-2xl font-bold">{formattedDate}</div>
         </CardContent>
       </Card>
     </div>
