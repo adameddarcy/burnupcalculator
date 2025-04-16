@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { FileUpload } from "@/components/FileUpload";
 import { BurnupChart } from "@/components/BurnupChart";
@@ -14,7 +15,7 @@ import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp } from "lucide-react";
+import { BarChart3, Users, ChartBarStacked, Clock, TrendingUp, Download } from "lucide-react";
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);

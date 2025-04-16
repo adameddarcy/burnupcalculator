@@ -38,7 +38,7 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
         }
 
         // Create annotations for projected completion date if it exists
-        const annotations = {};
+        const annotations: Record<string, any> = {};
         if (projectedCompletionDate) {
           annotations['projectedCompletion'] = {
             type: 'line',
@@ -48,16 +48,17 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
             borderWidth: 2,
             borderDash: [6, 6],
             label: {
-              enabled: true,
+              display: true,
               content: 'Projected Completion',
-              position: 'start'
+              position: 'start',
+              backgroundColor: 'rgba(255, 99, 132, 0.8)'
             }
           };
         }
 
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data as any, // Cast to any to avoid TypeScript errors
+          data: data,
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -74,7 +75,7 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
                 position: 'top',
               },
               annotation: {
-                annotations: annotations
+                annotations
               }
             },
             scales: {
@@ -122,6 +123,18 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
         <div style={{ height: `${height}px` }}>
           <canvas id="burndown-chart" ref={chartRef} />
         </div>
+        {projectedCompletionDate && (
+          <div className="mt-3 text-sm flex items-center gap-1">
+            <span className="font-medium">Projected Completion:</span>
+            <span>
+              {new Date(projectedCompletionDate).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

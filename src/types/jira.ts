@@ -48,7 +48,7 @@ export interface ProcessedData {
   assigneeChartData?: ChartData;
   projectedCompletionDate?: string;
   velocity?: number;
-  // Add new chart properties
+  // Chart properties
   cumulativeFlow?: ChartData;
   cycleTime?: ChartData;
   velocityChart?: ChartData;

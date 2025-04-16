@@ -1,3 +1,4 @@
+
 import Papa from 'papaparse';
 import { JiraIssue, ProcessedData, ChartData, AssigneeMetrics } from '@/types/jira';
 
@@ -317,27 +318,32 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     ],
   };
 
+  // Fix burndown chart data - ensuring consistent structure
   const burndownChartData: ChartData = {
     labels: extendedDateLabels,
     datasets: [
       {
         label: 'Actual Remaining',
-        data: burndownData.filter((d, i) => i < dateLabels.length).map(d => d.remaining),
+        data: extendedDateLabels.map(date => {
+          const item = burndownData.find(d => d.date === date);
+          return item ? item.remaining : null;
+        }),
         backgroundColor: 'rgba(255, 171, 0, 0.2)',
         borderColor: 'rgba(255, 171, 0, 1)',
         fill: true,
       },
       {
         label: 'Projected Remaining',
-        data: burndownData.map((d, i) => {
-          // For known dates, return null
+        data: extendedDateLabels.map((date, i) => {
+          // For dates we have actual data, return null
           if (i < dateLabels.length) return null;
-          // For projected dates, return the value
-          return d.remaining;
+          // For projected dates, find the item
+          const item = burndownData.find(d => d.date === date);
+          return item ? item.remaining : null;
         }),
         borderColor: 'rgba(255, 99, 132, 1)',
-        backgroundColor: 'rgba(255, 99, 132, 0.1)',
         borderDash: [5, 5],
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
         fill: true,
       }
     ],
