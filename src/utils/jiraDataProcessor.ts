@@ -311,6 +311,89 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
   // Use customTeamMembers if provided, otherwise use the count from assigneeMap
   const effectiveTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
 
+  // Calculate average duration by status for Gantt Chart
+  const statusGroups = {
+    completed: sortedIssues.filter(issue => issue.resolved),
+    inProgress: sortedIssues.filter(issue => 
+      !issue.resolved && issue.status.toLowerCase().includes('progress')),
+    remaining: sortedIssues.filter(issue => 
+      !issue.resolved && !issue.status.toLowerCase().includes('progress'))
+  };
+  
+  // Calculate average durations
+  const durations = {
+    completed: statusGroups.completed.length > 0 
+      ? statusGroups.completed.reduce((sum, issue) => {
+          const start = new Date(issue.created).getTime();
+          const end = new Date(issue.resolved!).getTime();
+          return sum + (end - start);
+        }, 0) / statusGroups.completed.length / (1000 * 60 * 60 * 24) // Convert to days
+      : 0,
+    inProgress: statusGroups.inProgress.length > 0
+      ? statusGroups.inProgress.reduce((sum, issue) => {
+          const start = new Date(issue.created).getTime();
+          const now = new Date().getTime();
+          return sum + (now - start);
+        }, 0) / statusGroups.inProgress.length / (1000 * 60 * 60 * 24) // Convert to days
+      : 0,
+    remaining: statusGroups.remaining.length > 0
+      ? statusGroups.remaining.reduce((sum, issue) => {
+          // For remaining tasks, we'll use the average of completed tasks if available
+          return sum + (durations?.completed || 5); // Default to 5 days if no completed tasks
+        }, 0) / statusGroups.remaining.length
+      : 0
+  };
+
+  // Get counts for each status group
+  const counts = {
+    completed: statusGroups.completed.length,
+    inProgress: statusGroups.inProgress.length,
+    remaining: statusGroups.remaining.length
+  };
+  
+  // Create gantt chart data with average durations
+  const ganttChartData: ChartData = {
+    labels: ['Completed Tasks', 'In Progress Tasks', 'Remaining Tasks'],
+    datasets: [{
+      label: 'Average Duration (days)',
+      data: [
+        {
+          x: 0, // X position doesn't matter for this visualization
+          y: durations.completed.toFixed(1),
+          _custom: {
+            count: counts.completed,
+            duration: durations.completed.toFixed(1),
+            status: 'Completed'
+          }
+        },
+        {
+          x: 1,
+          y: durations.inProgress.toFixed(1),
+          _custom: {
+            count: counts.inProgress,
+            duration: durations.inProgress.toFixed(1),
+            status: 'In Progress'
+          }
+        },
+        {
+          x: 2,
+          y: durations.remaining.toFixed(1),
+          _custom: {
+            count: counts.remaining,
+            duration: durations.remaining.toFixed(1),
+            status: 'Remaining'
+          }
+        }
+      ],
+      backgroundColor: [
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(255, 99, 132, 0.6)'
+      ],
+      borderWidth: 1,
+    }]
+  };
+
   // 1. Cumulative Flow Chart Data
   // Get all statuses
   const allStatuses = new Set<string>();
