@@ -1,6 +1,6 @@
 
 import Papa from 'papaparse';
-import { JiraIssue, ProcessedData, ChartData } from '@/types/jira';
+import { JiraIssue, ProcessedData, ChartData, AssigneeMetrics } from '@/types/jira';
 
 /**
  * Parse CSV data from Jira export
@@ -15,20 +15,19 @@ export const parseJiraCSV = (csvData: string): JiraIssue[] => {
     throw new Error(`CSV parsing error: ${result.errors.map(e => e.message).join(', ')}`);
   }
 
-  // Map CSV columns to our JiraIssue interface
+  // Map CSV columns to our JiraIssue interface, focusing on the fields specified
   return result.data.map((row: any) => {
-    // Support standard Jira export column names
     return {
       key: row['Issue key'] || '',
       summary: row['Summary'] || '',
       status: row['Status'] || '',
       created: row['Created'] || '',
+      updated: row['Updated'] || '',
       resolved: row['Resolved'] || null,
-      // Look for Story Points in various possible column names
       storyPoints: parseStoryPoints(row),
-      epic: row['Epic Link'] || row['Epic'] || '',
-      // Handle assignee from various possible column names
+      epic: row['Custom field (Epic Link)'] || row['Epic Link'] || row['Epic'] || '',
       assignee: row['Assignee'] || row['Assigned To'] || row['Assigned'] || '',
+      description: row['Description'] || '',
     };
   }).filter((issue: JiraIssue) => issue.key !== '');
 };
@@ -43,7 +42,8 @@ const parseStoryPoints = (row: any): number => {
     'Story point estimate', 
     'Story Points Estimate',
     'Story Point Estimate',
-    'Custom field (Story Points)'
+    'Custom field (Story Points)',
+    'Custom field (Original story points)'
   ];
   
   for (const field of storyPointFields) {
@@ -52,11 +52,12 @@ const parseStoryPoints = (row: any): number => {
     }
   }
   
-  return 0; // Default to 0 if no story points found
+  return 1; // Default to 1 if no story points found (treat each issue as 1 point)
 };
 
 /**
  * Process Jira issues into burnup and burndown chart data
+ * with focus on assignees, created dates, and resolved dates
  */
 export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
   // Sort issues by created date
@@ -64,12 +65,17 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     new Date(a.created).getTime() - new Date(b.created).getTime()
   );
 
-  // Get unique dates from the issues (created and resolved)
+  // Get unique dates from the issues (created, updated and resolved)
   const allDates = new Set<string>();
   sortedIssues.forEach(issue => {
     // Format date to YYYY-MM-DD
     const createdDate = new Date(issue.created).toISOString().split('T')[0];
     allDates.add(createdDate);
+    
+    if (issue.updated) {
+      const updatedDate = new Date(issue.updated).toISOString().split('T')[0];
+      allDates.add(updatedDate);
+    }
     
     if (issue.resolved) {
       const resolvedDate = new Date(issue.resolved).toISOString().split('T')[0];
@@ -81,7 +87,7 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
   const dateLabels = Array.from(allDates).sort();
 
   // Calculate cumulative story points for burnup and burndown
-  const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
+  const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
   let completedPoints = 0;
 
   // Generate data for burnup chart
@@ -91,12 +97,12 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     // Count completed points up to this date
     const completedByDate = sortedIssues
       .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
-      .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
+      .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
     
     // Count scope (total points) added by this date
     const scopeByDate = sortedIssues
       .filter(issue => new Date(issue.created).getTime() <= dateTime)
-      .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
+      .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
     
     completedPoints = completedByDate; // Update for the latest date
     
@@ -110,7 +116,7 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     // Count remaining points after this date
     const completedByDate = sortedIssues
       .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
-      .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
+      .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
     
     const remainingPoints = totalPoints - completedByDate;
     
@@ -137,10 +143,10 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     
     const assigneeData = assigneeMap.get(assignee)!;
     assigneeData.issueCount++;
-    assigneeData.assignedPoints += issue.storyPoints || 0;
+    assigneeData.assignedPoints += issue.storyPoints || 1;
     
     if (issue.resolved) {
-      assigneeData.completedPoints += issue.storyPoints || 0;
+      assigneeData.completedPoints += issue.storyPoints || 1;
     }
   });
 
@@ -149,6 +155,23 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     name,
     ...data
   }));
+
+  // Create assignee chart data - showing points per assignee
+  const assigneeChartData: ChartData = {
+    labels: assigneeData.map(a => a.name),
+    datasets: [
+      {
+        label: 'Assigned Points',
+        data: assigneeData.map(a => a.assignedPoints),
+        backgroundColor: 'rgba(0, 82, 204, 0.6)',
+      },
+      {
+        label: 'Completed Points',
+        data: assigneeData.map(a => a.completedPoints),
+        backgroundColor: 'rgba(54, 179, 126, 0.6)',
+      }
+    ]
+  };
 
   // Format for chart display
   const burnupChartData: ChartData = {
@@ -192,11 +215,13 @@ export const processJiraData = (issues: JiraIssue[]): ProcessedData => {
     issues: sortedIssues,
     assigneeData,
     totalAssignees: assigneeMap.size,
+    assigneeChartData,
   };
 };
 
 /**
  * Basic validation to check if data looks like a Jira CSV export
+ * focusing on the key fields specified by the user
  */
 export const validateJiraCSV = (data: any[]): boolean => {
   if (data.length === 0) return false;

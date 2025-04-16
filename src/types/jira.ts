@@ -4,10 +4,12 @@ export interface JiraIssue {
   summary: string;
   status: string;
   created: string;
+  updated?: string;
   resolved?: string;
   storyPoints?: number;
   epic?: string;
   assignee?: string;
+  description?: string;
 }
 
 export interface ChartData {
@@ -21,17 +23,20 @@ export interface ChartData {
   }[];
 }
 
+export interface AssigneeMetrics {
+  name: string;
+  completedPoints: number;
+  assignedPoints: number;
+  issueCount: number;
+}
+
 export interface ProcessedData {
   burnup: ChartData;
   burndown: ChartData;
   completedPoints: number;
   totalPoints: number;
   issues: JiraIssue[];
-  assigneeData: {
-    name: string;
-    completedPoints: number;
-    assignedPoints: number;
-    issueCount: number;
-  }[];
+  assigneeData: AssigneeMetrics[];
   totalAssignees: number;
+  assigneeChartData?: ChartData;
 }

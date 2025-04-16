@@ -5,13 +5,14 @@ import { BurnupChart } from "@/components/BurnupChart";
 import { BurndownChart } from "@/components/BurndownChart";
 import { JiraIssuesTable } from "@/components/JiraIssuesTable";
 import { SummaryMetrics } from "@/components/SummaryMetrics";
+import { AssigneeMetricsChart } from "@/components/AssigneeMetrics";
 import { JiraIssue, ProcessedData } from "@/types/jira";
 import { processJiraData } from "@/utils/jiraDataProcessor";
 import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3 } from "lucide-react";
+import { Download, BarChart3, Users } from "lucide-react";
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
@@ -23,8 +24,12 @@ export default function Index() {
     setProcessedData(processed);
   };
 
-  const handleExportChart = (chartType: 'burnup' | 'burndown') => {
-    const chartId = chartType === 'burnup' ? 'burnup-chart' : 'burndown-chart';
+  const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee') => {
+    const chartId = chartType === 'burnup' 
+      ? 'burnup-chart' 
+      : chartType === 'burndown' 
+        ? 'burndown-chart' 
+        : 'assignee-chart';
     exportChartAsImage(chartId, `jira-${chartType}-chart`);
   };
 
@@ -61,6 +66,7 @@ export default function Index() {
                 completedPoints={processedData?.completedPoints || 0}
                 totalIssues={jiraData.length}
                 completionPercentage={completionPercentage}
+                totalAssignees={processedData?.totalAssignees || 0}
               />
             </div>
 
@@ -72,6 +78,10 @@ export default function Index() {
                   <TabsTrigger value="charts" className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Charts
+                  </TabsTrigger>
+                  <TabsTrigger value="assignees" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Assignees
                   </TabsTrigger>
                   <TabsTrigger value="data">Data Table</TabsTrigger>
                 </TabsList>
@@ -130,6 +140,21 @@ export default function Index() {
                     </>
                   )}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="assignees">
+                {processedData && processedData.assigneeData.length > 0 && (
+                  <div id="assignee-chart-container">
+                    <AssigneeMetricsChart 
+                      data={processedData.assigneeData} 
+                      totalPoints={processedData.totalPoints} 
+                      chartData={processedData.assigneeChartData}
+                    />
+                    <div className="mt-4 text-sm text-muted-foreground">
+                      <p>Total Assignees: {processedData.totalAssignees}</p>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="data">
