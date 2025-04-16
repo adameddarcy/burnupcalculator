@@ -76,7 +76,7 @@ export default function Index() {
                 totalIssues={jiraData.length}
                 completionPercentage={completionPercentage}
                 totalAssignees={processedData?.totalAssignees || 0}
-                projectedCompletionDate={processedData?.projectedCompletionDate}
+                projectedCompletionDate={processedData?.projectedCompletionDate || null}
                 velocity={processedData?.velocity}
                 onTeamMembersChange={handleTeamMembersChange}
               />
