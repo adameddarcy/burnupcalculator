@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartData } from '@/types/jira';
-import type { ChartData as ChartJsData, ChartTypeRegistry } from 'chart.js';
 
 interface BurnupChartProps {
   data: ChartData;
@@ -38,6 +37,11 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           return;
         }
 
+        // Find the index of the projected completion date in the labels array
+        const projectedDateIndex = projectedCompletionDate 
+          ? data.labels.findIndex(label => label === projectedCompletionDate)
+          : -1;
+
         // Create chart options
         const chartOptions: any = {
           responsive: true,
@@ -72,49 +76,35 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           }
         };
         
-        // Add annotations if we have a projected completion date
-        if (projectedCompletionDate) {
-          const projectedDateIndex = data.labels.findIndex(
-            label => label === projectedCompletionDate
-          );
-          
-          if (projectedDateIndex !== -1) {
-            chartOptions.plugins.annotation = {
-              annotations: {
-                projectedCompletion: {
-                  type: 'line',
-                  xMin: projectedDateIndex,
-                  xMax: projectedDateIndex,
-                  borderColor: 'rgba(255, 99, 132, 0.8)',
-                  borderWidth: 2,
-                  borderDash: [5, 5],
-                  label: {
-                    display: true,
-                    content: 'Projected Completion',
-                    position: 'start',
-                    backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                    font: {
-                      weight: 'bold'
-                    }
+        // Add annotations if we have a projected completion date and it's in the labels
+        if (projectedDateIndex !== -1) {
+          chartOptions.plugins.annotation = {
+            annotations: {
+              projectedCompletion: {
+                type: 'line',
+                xMin: projectedDateIndex,
+                xMax: projectedDateIndex,
+                borderColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                label: {
+                  display: true,
+                  content: 'Projected Completion',
+                  position: 'start',
+                  backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                  font: {
+                    weight: 'bold'
                   }
                 }
               }
-            };
-          }
+            }
+          };
         }
 
-        // Use type assertion to bypass the type checking for now
-        // This allows us to use our custom ChartData interface
+        // Need to cast data to any to avoid TypeScript errors with Chart.js
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: {
-            labels: data.labels,
-            datasets: data.datasets.map(dataset => ({
-              ...dataset,
-              // Ensure datasets have the correct properties needed by Chart.js
-              type: dataset.type || 'line'  // Default to 'line' if not specified
-            }))
-          } as ChartJsData<keyof ChartTypeRegistry>,
+          data: data as any,
           options: chartOptions
         });
       } catch (error) {

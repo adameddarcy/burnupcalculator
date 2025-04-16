@@ -2,15 +2,13 @@
 import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartData } from '@/types/jira';
-import type { ChartData as ChartJsData, ChartTypeRegistry } from 'chart.js';
 
 interface BurndownChartProps {
   data: ChartData;
-  projectedCompletionDate?: string;
   height?: number;
 }
 
-export function BurndownChart({ data, projectedCompletionDate, height = 350 }: BurndownChartProps) {
+export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<any>(null);
 
@@ -38,44 +36,9 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
           return;
         }
 
-        // Create annotations for projected completion date if it exists
-        const annotations: Record<string, any> = {};
-        
-        if (projectedCompletionDate) {
-          const projectedDateIndex = data.labels.findIndex(
-            label => label === projectedCompletionDate
-          );
-          
-          if (projectedDateIndex !== -1) {
-            annotations['projectedCompletion'] = {
-              type: 'line',
-              xMin: projectedDateIndex,
-              xMax: projectedDateIndex,
-              borderColor: 'rgba(255, 99, 132, 0.8)',
-              borderWidth: 2,
-              borderDash: [6, 6],
-              label: {
-                display: true,
-                content: 'Projected Completion',
-                position: 'start',
-                backgroundColor: 'rgba(255, 99, 132, 0.8)'
-              }
-            };
-          }
-        }
-
-        // Use type assertion to bypass the type checking for now
-        // This allows us to use our custom ChartData interface
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: {
-            labels: data.labels,
-            datasets: data.datasets.map(dataset => ({
-              ...dataset,
-              // Ensure datasets have the correct properties needed by Chart.js
-              type: dataset.type || 'line'  // Default to 'line' if not specified
-            }))
-          } as ChartJsData<keyof ChartTypeRegistry>,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -92,7 +55,7 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
                 position: 'top',
               },
               annotation: {
-                annotations
+                annotations: {} // Initialize empty annotations to prevent undefined errors
               }
             },
             scales: {
@@ -129,7 +92,7 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
         chartInstance.current.destroy();
       }
     };
-  }, [data, projectedCompletionDate]);
+  }, [data]);
 
   return (
     <Card className="w-full">
@@ -140,18 +103,6 @@ export function BurndownChart({ data, projectedCompletionDate, height = 350 }: B
         <div style={{ height: `${height}px` }}>
           <canvas id="burndown-chart" ref={chartRef} />
         </div>
-        {projectedCompletionDate && (
-          <div className="mt-3 text-sm flex items-center gap-1">
-            <span className="font-medium">Projected Completion:</span>
-            <span>
-              {new Date(projectedCompletionDate).toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}
-            </span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

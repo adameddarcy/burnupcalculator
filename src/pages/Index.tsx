@@ -15,7 +15,7 @@ import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { BarChart3, Users, ChartBarStacked, Clock, TrendingUp, Download } from "lucide-react";
+import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp } from "lucide-react";
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
@@ -26,12 +26,14 @@ export default function Index() {
     setJiraData(data);
     const processed = processJiraData(data);
     setProcessedData(processed);
+    // Reset custom team members when new data is loaded
     setCustomTeamMembers(null);
   };
 
   const handleTeamMembersChange = (teamMembers: number) => {
     setCustomTeamMembers(teamMembers);
     
+    // Recalculate processed data with new team members count
     if (jiraData) {
       const updatedProcessedData = processJiraData(jiraData, teamMembers);
       setProcessedData(updatedProcessedData);
@@ -173,10 +175,7 @@ export default function Index() {
                           />
                         </div>
                         <div id="burndown-chart-container">
-                          <BurndownChart 
-                            data={processedData.burndown} 
-                            projectedCompletionDate={processedData.projectedCompletionDate}
-                          />
+                          <BurndownChart data={processedData.burndown} />
                         </div>
                       </>
                     )}
