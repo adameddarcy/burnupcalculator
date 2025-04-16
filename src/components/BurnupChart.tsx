@@ -19,7 +19,12 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
     const renderChart = async () => {
       // Dynamically import Chart.js to avoid SSR issues
       const { Chart, registerables } = await import('chart.js');
+      // Import annotation plugin
+      const annotationPlugin = await import('chartjs-plugin-annotation');
+      
       Chart.register(...registerables);
+      // Register the annotation plugin
+      Chart.register(annotationPlugin.default);
 
       // Destroy previous chart if it exists
       if (chartInstance.current) {
@@ -34,24 +39,60 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
         ? data.labels.findIndex(label => label === projectedCompletionDate)
         : -1;
 
-      // Create vertical line annotation if we have a projected completion date
-      const annotations: any = {};
+      // Create chart options with conditional annotations
+      const chartOptions: any = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Epic Burnup Chart'
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          },
+          legend: {
+            position: 'top',
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Story Points'
+            },
+            beginAtZero: true
+          }
+        }
+      };
       
+      // Add annotations if we have a projected completion date
       if (projectedDateIndex !== -1) {
-        annotations.projectedCompletion = {
-          type: 'line',
-          xMin: projectedDateIndex,
-          xMax: projectedDateIndex,
-          borderColor: 'rgba(255, 99, 132, 0.8)',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          label: {
-            enabled: true,
-            content: 'Projected Completion',
-            position: 'start',
-            backgroundColor: 'rgba(255, 99, 132, 0.8)',
-            font: {
-              weight: 'bold',
+        chartOptions.plugins.annotation = {
+          annotations: {
+            projectedCompletion: {
+              type: 'line',
+              xMin: projectedDateIndex,
+              xMax: projectedDateIndex,
+              borderColor: 'rgba(255, 99, 132, 0.8)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              label: {
+                enabled: true,
+                content: 'Projected Completion',
+                position: 'start',
+                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                font: {
+                  weight: 'bold',
+                }
+              }
             }
           }
         };
@@ -60,41 +101,7 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
       chartInstance.current = new Chart(ctx, {
         type: 'line',
         data: data,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Epic Burnup Chart'
-            },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-            },
-            legend: {
-              position: 'top',
-            },
-            annotation: annotations && Object.keys(annotations).length > 0 ? {
-              annotations: annotations
-            } : undefined,
-          },
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Date'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Story Points'
-              },
-              beginAtZero: true
-            }
-          }
-        }
+        options: chartOptions
       });
     };
 
