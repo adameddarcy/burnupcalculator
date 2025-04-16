@@ -90,6 +90,33 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
   const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
   let completedPoints = 0;
 
+  // Process assignee data - MOVED THIS SECTION EARLIER
+  const assigneeMap = new Map<string, { 
+    completedPoints: number; 
+    assignedPoints: number; 
+    issueCount: number; 
+  }>();
+
+  sortedIssues.forEach(issue => {
+    const assignee = issue.assignee || 'Unassigned';
+    
+    if (!assigneeMap.has(assignee)) {
+      assigneeMap.set(assignee, { 
+        completedPoints: 0, 
+        assignedPoints: 0, 
+        issueCount: 0 
+      });
+    }
+    
+    const assigneeData = assigneeMap.get(assignee)!;
+    assigneeData.issueCount++;
+    assigneeData.assignedPoints += issue.storyPoints || 1;
+    
+    if (issue.resolved) {
+      assigneeData.completedPoints += issue.storyPoints || 1;
+    }
+  });
+
   // Generate data for burnup chart
   const burnupData = dateLabels.map(date => {
     const dateTime = new Date(date).getTime();
@@ -213,33 +240,6 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     const remainingPoints = totalPoints - completedByDate;
     
     return { date, remaining: remainingPoints };
-  });
-
-  // Process assignee data
-  const assigneeMap = new Map<string, { 
-    completedPoints: number; 
-    assignedPoints: number; 
-    issueCount: number; 
-  }>();
-
-  sortedIssues.forEach(issue => {
-    const assignee = issue.assignee || 'Unassigned';
-    
-    if (!assigneeMap.has(assignee)) {
-      assigneeMap.set(assignee, { 
-        completedPoints: 0, 
-        assignedPoints: 0, 
-        issueCount: 0 
-      });
-    }
-    
-    const assigneeData = assigneeMap.get(assignee)!;
-    assigneeData.issueCount++;
-    assigneeData.assignedPoints += issue.storyPoints || 1;
-    
-    if (issue.resolved) {
-      assigneeData.completedPoints += issue.storyPoints || 1;
-    }
   });
 
   // Convert assignee map to array for the response
