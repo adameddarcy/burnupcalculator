@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FileUpload } from "@/components/FileUpload";
 import { BurnupChart } from "@/components/BurnupChart";
@@ -16,7 +15,8 @@ import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp } from "lucide-react";
+import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp, LinkedIn } from "lucide-react";
+import { LinkedInButton } from '@/components/LinkedInButton';
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
@@ -27,14 +27,12 @@ export default function Index() {
     setJiraData(data);
     const processed = processJiraData(data);
     setProcessedData(processed);
-    // Reset custom team members when new data is loaded
     setCustomTeamMembers(null);
   };
 
   const handleTeamMembersChange = (teamMembers: number) => {
     setCustomTeamMembers(teamMembers);
     
-    // Recalculate processed data with new team members count
     if (jiraData) {
       const updatedProcessedData = processJiraData(jiraData, teamMembers);
       setProcessedData(updatedProcessedData);
@@ -77,7 +75,10 @@ export default function Index() {
             <h1 className="text-3xl font-bold tracking-tight">
               Jira Epic Metrics Calculator
             </h1>
-            <HelpDialog />
+            <div className="flex items-center space-x-2">
+              <HelpDialog />
+              <LinkedInButton profileUrl="https://www.linkedin.com/in/adamedarcy/" />
+            </div>
           </div>
           <p className="text-muted-foreground mt-2">
             Upload a Jira CSV export to visualize burnup and burndown charts for your epics
