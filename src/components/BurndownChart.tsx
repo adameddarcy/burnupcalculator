@@ -20,6 +20,10 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
       const { Chart, registerables } = await import('chart.js');
       Chart.register(...registerables);
 
+      // Import annotation plugin for consistency with BurnupChart
+      const annotationPlugin = await import('chartjs-plugin-annotation');
+      Chart.register(annotationPlugin.default);
+      
       // Destroy previous chart if it exists
       if (chartInstance.current) {
         chartInstance.current.destroy();

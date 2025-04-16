@@ -22,8 +22,8 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
       Chart.register(...registerables);
       
       // Import and register annotation plugin properly
-      const { Annotation } = await import('chartjs-plugin-annotation');
-      Chart.register(Annotation);
+      const annotationPlugin = await import('chartjs-plugin-annotation');
+      Chart.register(annotationPlugin.default);
 
       // Destroy previous chart if it exists
       if (chartInstance.current) {
