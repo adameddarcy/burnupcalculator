@@ -148,7 +148,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     
     // Get first and last resolved dates
     const firstResolvedDate = new Date(sortedResolved[0].resolved!);
-    const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);\
+    const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);
     
     // Calculate duration in days
     const durationDays = Math.max(1, (lastResolvedDate.getTime() - firstResolvedDate.getTime()) / (1000 * 60 * 60 * 24));
