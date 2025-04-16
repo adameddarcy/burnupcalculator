@@ -22,7 +22,7 @@ export interface ChartDataset {
   borderDash?: number[];
   type?: string;
   tension?: number;
-  borderWidth?: number; // Added missing borderWidth property
+  borderWidth?: number;
 }
 
 export interface ChartData {
@@ -52,5 +52,4 @@ export interface ProcessedData {
   cumulativeFlow?: ChartData;
   cycleTime?: ChartData;
   velocityChart?: ChartData;
-  ganttChart?: ChartData;
 }

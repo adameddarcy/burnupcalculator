@@ -9,14 +9,13 @@ import { AssigneeMetricsChart } from "@/components/AssigneeMetrics";
 import { CumulativeFlowChart } from "@/components/CumulativeFlowChart";
 import { CycleTimeChart } from "@/components/CycleTimeChart";
 import { VelocityChart } from "@/components/VelocityChart";
-import { GanttChart } from "@/components/GanttChart";
 import { JiraIssue, ProcessedData } from "@/types/jira";
 import { processJiraData } from "@/utils/jiraDataProcessor";
 import { exportChartAsImage, exportDataAsCSV } from "@/utils/exportUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp, ChartGantt } from "lucide-react";
+import { Download, BarChart3, Users, ChartBarStacked, Clock, TrendingUp } from "lucide-react";
 
 export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
@@ -41,7 +40,7 @@ export default function Index() {
     }
   };
 
-  const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee' | 'cumulative' | 'cycle' | 'velocity' | 'gantt') => {
+  const handleExportChart = (chartType: 'burnup' | 'burndown' | 'assignee' | 'cumulative' | 'cycle' | 'velocity') => {
     const chartId = chartType === 'burnup' 
       ? 'burnup-chart' 
       : chartType === 'burndown' 
@@ -52,9 +51,7 @@ export default function Index() {
             ? 'cumulative-flow-chart'
             : chartType === 'cycle'
               ? 'cycle-time-chart'
-              : chartType === 'velocity'
-                ? 'velocity-chart'
-                : 'gantt-chart';
+              : 'velocity-chart';
     exportChartAsImage(chartId, `jira-${chartType}-chart`);
   };
 
@@ -216,15 +213,6 @@ export default function Index() {
                       <Download className="h-4 w-4" />
                       Export Velocity
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleExportChart('gantt')}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Export Gantt
-                    </Button>
                   </div>
                   
                   <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
@@ -238,9 +226,6 @@ export default function Index() {
                         </div>
                         <div id="velocity-chart-container">
                           <VelocityChart data={processedData.velocityChart || { labels: [], datasets: [] }} />
-                        </div>
-                        <div id="gantt-chart-container">
-                          <GanttChart data={processedData.ganttChart || { labels: [], datasets: [] }} />
                         </div>
                       </>
                     )}
