@@ -38,7 +38,7 @@ export function CumulativeFlowChart({ data, height = 350 }: CumulativeFlowChartP
 
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             responsive: true,
             maintainAspectRatio: false,

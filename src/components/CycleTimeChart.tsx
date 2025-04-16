@@ -34,7 +34,7 @@ export function CycleTimeChart({ data, height = 350 }: CycleTimeChartProps) {
 
         chartInstance.current = new Chart(ctx, {
           type: 'scatter',
-          data: data,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             responsive: true,
             maintainAspectRatio: false,

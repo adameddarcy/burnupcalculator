@@ -38,7 +38,7 @@ export function GanttChart({ data, height = 350 }: GanttChartProps) {
 
         chartInstance.current = new Chart(ctx, {
           type: 'bar',
-          data: data,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             indexAxis: 'y',
             responsive: true,

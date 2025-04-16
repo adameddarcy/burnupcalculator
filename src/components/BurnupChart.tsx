@@ -101,9 +101,10 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           };
         }
 
+        // Need to cast data to any to avoid TypeScript errors with Chart.js
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: data,
+          data: data as any,
           options: chartOptions
         });
       } catch (error) {

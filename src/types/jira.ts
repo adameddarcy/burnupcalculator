@@ -12,17 +12,21 @@ export interface JiraIssue {
   description?: string;
 }
 
+// Modified ChartData to align with Chart.js expected format
+export interface ChartDataset {
+  label: string;
+  data: number[] | any[];
+  backgroundColor?: string | string[];
+  borderColor?: string | string[];
+  fill?: boolean;
+  borderDash?: number[];
+  type?: string;
+  tension?: number;
+}
+
 export interface ChartData {
   labels: string[];
-  datasets: {
-    label: string;
-    data: number[] | any[];
-    backgroundColor?: string;
-    borderColor?: string;
-    fill?: boolean;
-    borderDash?: number[];
-    type?: string;
-  }[];
+  datasets: ChartDataset[];
 }
 
 export interface AssigneeMetrics {

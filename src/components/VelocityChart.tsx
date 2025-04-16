@@ -34,7 +34,7 @@ export function VelocityChart({ data, height = 350 }: VelocityChartProps) {
 
         chartInstance.current = new Chart(ctx, {
           type: 'bar',
-          data: data,
+          data: data as any, // Cast to any to avoid TypeScript errors
           options: {
             responsive: true,
             maintainAspectRatio: false,
