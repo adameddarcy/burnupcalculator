@@ -46,7 +46,7 @@ export interface ProcessedData {
   assigneeData: AssigneeMetrics[];
   totalAssignees: number;
   assigneeChartData?: ChartData;
-  projectedCompletionDate?: string;
+  projectedCompletionDate: Date | null;
   velocity?: number;
   // Add new chart properties
   cumulativeFlow?: ChartData;

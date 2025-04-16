@@ -6,7 +6,7 @@ import { ChartData } from '@/types/jira';
 interface BurnupChartProps {
   data: ChartData;
   height?: number;
-  projectedCompletionDate?: string;
+  projectedCompletionDate?: Date | null;
 }
 
 export function BurnupChart({ data, height = 350, projectedCompletionDate }: BurnupChartProps) {
@@ -37,9 +37,14 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           return;
         }
 
+        // Format the projected completion date to a string if it exists
+        const projectedDateString = projectedCompletionDate 
+          ? projectedCompletionDate.toISOString().split('T')[0]
+          : null;
+
         // Find the index of the projected completion date in the labels array
-        const projectedDateIndex = projectedCompletionDate 
-          ? data.labels.findIndex(label => label === projectedCompletionDate)
+        const projectedDateIndex = projectedDateString && data.labels
+          ? data.labels.findIndex(label => label === projectedDateString)
           : -1;
 
         // Create chart options
@@ -139,7 +144,7 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           <div className="mt-3 text-sm flex items-center gap-1">
             <span className="font-medium">Projected Completion:</span>
             <span>
-              {new Date(projectedCompletionDate).toLocaleDateString(undefined, {
+              {projectedCompletionDate.toLocaleDateString(undefined, {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'

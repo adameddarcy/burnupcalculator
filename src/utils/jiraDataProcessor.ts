@@ -1,4 +1,3 @@
-
 import Papa from 'papaparse';
 import { JiraIssue, ProcessedData, ChartData, AssigneeMetrics } from '@/types/jira';
 
@@ -139,7 +138,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
   // Calculate velocity based on completed issues
   const resolvedIssues = sortedIssues.filter(issue => issue.resolved);
   let velocity = 0;
-  let projectedCompletionDate: string | undefined;
+  let projectedCompletionDate: Date | null = null;
   
   if (resolvedIssues.length > 0) {
     // Sort resolved issues by resolved date
@@ -176,18 +175,17 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     
     // Calculate projected completion date if we have velocity
     if (adjustedVelocity > 0) {
-      const projectedDate = new Date();
-      projectedDate.setDate(projectedDate.getDate() + daysToCompletion);
-      projectedCompletionDate = projectedDate.toISOString().split('T')[0];
+      projectedCompletionDate = new Date();
+      projectedCompletionDate.setDate(projectedCompletionDate.getDate() + daysToCompletion);
     }
   }
 
   // Generate extended date labels for prediction
   let extendedDateLabels = [...dateLabels];
-  if (projectedCompletionDate && !dateLabels.includes(projectedCompletionDate)) {
+  if (projectedCompletionDate && !dateLabels.includes(projectedCompletionDate.toISOString().split('T')[0])) {
     // Add projected completion date and any intermediate dates
     const lastDate = new Date(dateLabels[dateLabels.length - 1]);
-    const projectedDate = new Date(projectedCompletionDate);
+    const projectedDate = projectedCompletionDate; // Now a Date object
     
     // Add intermediate dates (every 7 days)
     for (let d = new Date(lastDate); d <= projectedDate; d.setDate(d.getDate() + 7)) {
@@ -198,7 +196,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     }
     
     // Add projected completion date
-    extendedDateLabels.push(projectedCompletionDate);
+    extendedDateLabels.push(projectedCompletionDate.toISOString().split('T')[0]);
     extendedDateLabels.sort();
   }
   
