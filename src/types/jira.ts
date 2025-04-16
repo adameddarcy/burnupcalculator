@@ -1,3 +1,4 @@
+
 export interface JiraIssue {
   key: string;
   summary: string;
@@ -11,7 +12,7 @@ export interface JiraIssue {
   description?: string;
 }
 
-// Modified ChartData to align better with Chart.js expected format
+// Modified ChartDataset to align better with Chart.js expected format
 export interface ChartDataset {
   label: string;
   data: number[] | any[];

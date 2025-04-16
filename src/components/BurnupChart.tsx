@@ -103,15 +103,18 @@ export function BurnupChart({ data, height = 350, projectedCompletionDate }: Bur
           }
         }
 
-        // Properly cast data to Chart.js expected type
-        const chartData: ChartJsData<keyof ChartTypeRegistry, any[], unknown> = {
-          labels: data.labels,
-          datasets: data.datasets
-        };
-
+        // Use type assertion to bypass the type checking for now
+        // This allows us to use our custom ChartData interface
         chartInstance.current = new Chart(ctx, {
           type: 'line',
-          data: chartData,
+          data: {
+            labels: data.labels,
+            datasets: data.datasets.map(dataset => ({
+              ...dataset,
+              // Ensure datasets have the correct properties needed by Chart.js
+              type: dataset.type || 'line'  // Default to 'line' if not specified
+            }))
+          } as ChartJsData<keyof ChartTypeRegistry>,
           options: chartOptions
         });
       } catch (error) {
