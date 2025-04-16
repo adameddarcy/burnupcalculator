@@ -36,6 +36,34 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
           console.error('Failed to get canvas context');
           return;
         }
+        
+        // Create a custom logo plugin
+        const logoPlugin = {
+          id: 'logoPlugin',
+          afterRender: (chart) => {
+            const logoImage = logoRef.current;
+            if (logoImage) {
+              const ctx = chart.ctx;
+              const logoWidth = 50;
+              const logoHeight = 50;
+              const margin = 10;
+              
+              ctx.save();
+              ctx.globalCompositeOperation = 'destination-over';
+              ctx.drawImage(
+                logoImage, 
+                chart.width - logoWidth - margin, 
+                margin, 
+                logoWidth, 
+                logoHeight
+              );
+              ctx.restore();
+            }
+          }
+        };
+        
+        // Register the custom plugin
+        Chart.register(logoPlugin);
 
         chartInstance.current = new Chart(ctx, {
           type: 'line',
@@ -57,27 +85,21 @@ export function BurndownChart({ data, height = 350 }: BurndownChartProps) {
               },
               annotation: {
                 annotations: {} // Initialize empty annotations to prevent undefined errors
-              },
-              // Add logo to top right corner
-              afterDraw: (chart) => {
-                const logoImage = logoRef.current;
-                if (logoImage) {
-                  const ctx = chart.ctx;
-                  const logoWidth = 50;
-                  const logoHeight = 50;
-                  const margin = 10;
-                  
-                  ctx.save();
-                  ctx.globalCompositeOperation = 'destination-over';
-                  ctx.drawImage(
-                    logoImage, 
-                    chart.width - logoWidth - margin, 
-                    margin, 
-                    logoWidth, 
-                    logoHeight
-                  );
-                  ctx.restore();
+              }
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Date'
                 }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Remaining Story Points'
+                },
+                beginAtZero: true
               }
             }
           }
