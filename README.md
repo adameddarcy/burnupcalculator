@@ -1,4 +1,3 @@
-
 # Jira Epic Metrics Calculator
 
 A web application that generates burnup and burndown charts from Jira epic CSV exports.
@@ -11,25 +10,40 @@ A web application that generates burnup and burndown charts from Jira epic CSV e
 - Export charts as images
 - Export processed data as CSV
 
-## How to Use
+## How to Get a CSV for Calculation
 
-1. **Export Data from Jira**
-   - In Jira, navigate to your epic or filter view
-   - Click on "Export" and select "CSV (All Fields)"
-   - Save the CSV file to your computer
+### Step-by-Step Guide to Export Jira Epic CSV
 
-2. **Upload CSV to the Application**
-   - Click the upload area or drag and drop your CSV file
-   - The application will automatically parse and validate the data
+1. **Log in to Jira**
+   - Navigate to your Jira project
 
-3. **View and Analyze Charts**
-   - Once uploaded, you'll see burnup and burndown charts
-   - The burnup chart shows completed story points vs total scope over time
-   - The burndown chart shows remaining work over time
+2. **Find Your Epic**
+   - Use the search bar or navigate to the epic you want to analyze
+   - You can also use JQL (Jira Query Language) to filter epics
 
-4. **Export Results**
-   - Click "Export Burnup" or "Export Burndown" to save charts as images
-   - Click "Export Data" to download the processed data as CSV
+3. **Export Epic Issues**
+   - Click on the "..." (more options) menu
+   - Select "Export" > "Export to CSV"
+   
+   **Alternative Method:**
+   - Go to the "Issues" view
+   - Apply a filter for your specific epic using the search bar or JQL
+   - Click on "Export" > "Export to CSV (All Fields)"
+
+4. **Recommended JQL Filters**
+   - For a single epic: `"Epic Link" = EPIC-123`
+   - For all issues in an epic: `"Epic Link" = EPIC-123 OR "Epic Link" = EPIC-123`
+
+### CSV Export Tips
+- Ensure you export ALL fields for comprehensive analysis
+- The export should include columns like:
+  - Issue key
+  - Summary
+  - Status
+  - Created date
+  - Resolved date (if applicable)
+  - Story Points
+  - Assignee
 
 ## CSV Format Requirements
 
@@ -41,6 +55,11 @@ The application expects a standard Jira CSV export with at least these fields:
 - Resolved (optional)
 - Story Points (or Story point estimate)
 - Epic Link (optional)
+
+## Tips for Best Results
+- Export the entire epic's history for most accurate metrics
+- Include all issue statuses (not just completed issues)
+- Ensure story points are consistently populated
 
 ## Built With
 
