@@ -55,6 +55,7 @@ export interface ProcessedData {
   assigneeChartData?: ChartData;
   projectedCompletionDate: Date | null;
   velocity?: number;
+  originalVelocity?: number; // Added to store the original calculated velocity
   // Add new chart properties
   cumulativeFlow?: ChartData;
   cycleTime?: ChartData;

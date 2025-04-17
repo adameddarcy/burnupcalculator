@@ -11,6 +11,7 @@ export const addSummaryMetricsToPdf = (
   doc: jsPDF,
   processedData: ProcessedData,
   customTeamMembers: number | null,
+  customVelocity: number | null = null,
   margin: number,
   yPos: number
 ): number => {
@@ -38,8 +39,13 @@ export const addSummaryMetricsToPdf = (
   doc.text(`Team Members: ${effectiveTeamMembers}`, margin, yPos);
   yPos += 7;
 
-  if (processedData.velocity) {
-    doc.text(`Team Velocity: ${processedData.velocity.toFixed(1)} points/day`, margin, yPos);
+  // Use custom velocity if provided, otherwise use the original value
+  const effectiveVelocity = customVelocity !== null 
+    ? customVelocity
+    : processedData.velocity || 0;
+  
+  if (effectiveVelocity) {
+    doc.text(`Team Velocity: ${effectiveVelocity.toFixed(1)} points/day`, margin, yPos);
     yPos += 7;
   }
 

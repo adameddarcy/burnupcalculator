@@ -21,16 +21,23 @@ interface SummaryMetricsProps {
   totalIssues: number;
   completionPercentage: number;
   totalAssignees?: number;
-  projectedCompletionDate?: Date | null;  // Updated to accept Date | null
+  projectedCompletionDate?: Date | null;
   velocity?: number;
+  originalVelocity?: number;
   onTeamMembersChange?: (teamMembers: number) => void;
+  onVelocityChange?: (velocity: number) => void;
 }
 
 const teamMembersSchema = z.object({
   teamMembers: z.number().int().positive()
 });
 
+const velocitySchema = z.object({
+  velocity: z.number().positive()
+});
+
 type TeamMembersFormValues = z.infer<typeof teamMembersSchema>;
+type VelocityFormValues = z.infer<typeof velocitySchema>;
 
 export function SummaryMetrics({ 
   totalPoints, 
@@ -40,23 +47,34 @@ export function SummaryMetrics({
   totalAssignees = 0,
   projectedCompletionDate,
   velocity,
-  onTeamMembersChange
+  originalVelocity,
+  onTeamMembersChange,
+  onVelocityChange
 }: SummaryMetricsProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState<string | null>(null);
   const [customTeamMembers, setCustomTeamMembers] = useState<number | undefined>(undefined);
+  const [customVelocity, setCustomVelocity] = useState<number | undefined>(undefined);
 
   const displayedTeamMembers = customTeamMembers !== undefined ? customTeamMembers : totalAssignees;
+  const displayedVelocity = customVelocity !== undefined ? customVelocity : velocity;
 
-  const form = useForm<TeamMembersFormValues>({
+  const teamMembersForm = useForm<TeamMembersFormValues>({
     resolver: zodResolver(teamMembersSchema),
     defaultValues: {
       teamMembers: displayedTeamMembers
     }
   });
 
-  const onSubmit = (data: TeamMembersFormValues) => {
+  const velocityForm = useForm<VelocityFormValues>({
+    resolver: zodResolver(velocitySchema),
+    defaultValues: {
+      velocity: displayedVelocity || 0
+    }
+  });
+
+  const onSubmitTeamMembers = (data: TeamMembersFormValues) => {
     setCustomTeamMembers(data.teamMembers);
-    setIsEditing(false);
+    setIsEditing(null);
     
     // Notify parent component about the team members change
     if (onTeamMembersChange) {
@@ -64,13 +82,33 @@ export function SummaryMetrics({
     }
   };
 
-  const handleReset = () => {
+  const onSubmitVelocity = (data: VelocityFormValues) => {
+    setCustomVelocity(data.velocity);
+    setIsEditing(null);
+    
+    // Notify parent component about the velocity change
+    if (onVelocityChange) {
+      onVelocityChange(data.velocity);
+    }
+  };
+
+  const handleResetTeamMembers = () => {
     setCustomTeamMembers(undefined);
-    setIsEditing(false);
+    setIsEditing(null);
     
     // Reset team members to default by passing the original value
     if (onTeamMembersChange) {
       onTeamMembersChange(totalAssignees);
+    }
+  };
+
+  const handleResetVelocity = () => {
+    setCustomVelocity(undefined);
+    setIsEditing(null);
+    
+    // Reset velocity to the original calculated value
+    if (onVelocityChange && originalVelocity !== undefined) {
+      onVelocityChange(originalVelocity);
     }
   };
 
@@ -126,7 +164,7 @@ export function SummaryMetrics({
                   variant="ghost" 
                   size="icon" 
                   className="h-5 w-5" 
-                  onClick={handleReset}
+                  onClick={handleResetTeamMembers}
                   title="Reset to default"
                 >
                   <RotateCcw className="h-3 w-3" />
@@ -136,18 +174,18 @@ export function SummaryMetrics({
                 variant="ghost" 
                 size="icon" 
                 className="h-5 w-5" 
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => setIsEditing(isEditing === 'teamMembers' ? null : 'teamMembers')}
               >
                 <Edit2 className="h-3 w-3" />
               </Button>
             </div>
           </div>
           
-          {isEditing ? (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2 items-center">
+          {isEditing === 'teamMembers' ? (
+            <Form {...teamMembersForm}>
+              <form onSubmit={teamMembersForm.handleSubmit(onSubmitTeamMembers)} className="flex gap-2 items-center">
                 <FormField
-                  control={form.control}
+                  control={teamMembersForm.control}
                   name="teamMembers"
                   render={({ field }) => (
                     <FormItem className="flex-1">
@@ -190,11 +228,60 @@ export function SummaryMetrics({
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm font-medium">Team Velocity</span>
+            <div className="flex ml-auto">
+              {customVelocity !== undefined && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5" 
+                  onClick={handleResetVelocity}
+                  title="Reset to default"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5" 
+                onClick={() => setIsEditing(isEditing === 'velocity' ? null : 'velocity')}
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-          <div className="text-2xl font-bold">
-            {velocity ? `${velocity.toFixed(1)}` : 'N/A'}
-            <span className="text-sm text-muted-foreground ml-1">points/day</span>
-          </div>
+          
+          {isEditing === 'velocity' ? (
+            <Form {...velocityForm}>
+              <form onSubmit={velocityForm.handleSubmit(onSubmitVelocity)} className="flex gap-2 items-center">
+                <FormField
+                  control={velocityForm.control}
+                  name="velocity"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          autoFocus
+                          className="h-8"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" size="sm" className="h-8">Save</Button>
+              </form>
+            </Form>
+          ) : (
+            <div className="text-2xl font-bold">
+              {displayedVelocity ? `${displayedVelocity.toFixed(1)}` : 'N/A'}
+              <span className="text-sm text-muted-foreground ml-1">points/day</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 

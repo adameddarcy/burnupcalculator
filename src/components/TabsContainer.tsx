@@ -15,6 +15,7 @@ interface TabsContainerProps {
   jiraData: JiraIssue[];
   processedData: ProcessedData;
   customTeamMembers: number | null;
+  customVelocity?: number | null;
   onExportChart: (chartType: 'burnup' | 'burndown' | 'assignee' | 'cumulative' | 'cycle' | 'velocity') => void;
   onExportData: () => void;
   onNewUpload: () => void;
@@ -24,6 +25,7 @@ export function TabsContainer({
   jiraData, 
   processedData, 
   customTeamMembers,
+  customVelocity,
   onExportChart,
   onExportData,
   onNewUpload
@@ -44,7 +46,7 @@ export function TabsContainer({
       // Small delay to ensure toast is displayed
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      await generateFullReport(processedData, customTeamMembers);
+      await generateFullReport(processedData, customTeamMembers, customVelocity);
       
       toast({
         title: "Report generated successfully",

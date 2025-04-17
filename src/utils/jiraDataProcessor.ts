@@ -14,7 +14,6 @@ export const parseJiraCSV = (csvData: string): JiraIssue[] => {
     throw new Error(`CSV parsing error: ${result.errors.map(e => e.message).join(', ')}`);
   }
 
-  // Map CSV columns to our JiraIssue interface, focusing on the fields specified
   return result.data.map((row: any) => {
     return {
       key: row['Issue key'] || '',
@@ -35,7 +34,6 @@ export const parseJiraCSV = (csvData: string): JiraIssue[] => {
  * Helper function to parse story points from various column formats
  */
 const parseStoryPoints = (row: any): number => {
-  // Check multiple possible column names for Story Points
   const storyPointFields = [
     'Story Points', 
     'Story point estimate', 
@@ -51,20 +49,22 @@ const parseStoryPoints = (row: any): number => {
     }
   }
   
-  return 1; // Default to 1 if no story points found (treat each issue as 1 point)
+  return 1;
 };
 
 /**
  * Process Jira issues into burnup and burndown chart data
  * with focus on assignees, created dates, and resolved dates
  */
-export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number): ProcessedData => {
-  // Sort issues by created date
+export const processJiraData = (
+  issues: JiraIssue[], 
+  customTeamMembers?: number, 
+  customVelocity?: number
+): ProcessedData => {
   const sortedIssues = [...issues].sort((a, b) => 
     new Date(a.created).getTime() - new Date(b.created).getTime()
   );
 
-  // Create assignee map first - moved to the top to avoid "used before declaration" errors
   const assigneeMap = new Map<string, { 
     completedPoints: number; 
     assignedPoints: number; 
@@ -91,10 +91,8 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     }
   });
 
-  // Get unique dates from the issues (created, updated and resolved)
   const allDates = new Set<string>();
   sortedIssues.forEach(issue => {
-    // Format date to YYYY-MM-DD
     const createdDate = new Date(issue.created).toISOString().split('T')[0];
     allDates.add(createdDate);
     
@@ -109,85 +107,69 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     }
   });
 
-  // Convert to array and sort dates
   const dateLabels = Array.from(allDates).sort();
 
-  // Calculate cumulative story points for burnup and burndown
   const totalPoints = sortedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
   let completedPoints = 0;
 
-  // Generate data for burnup chart
   const burnupData = dateLabels.map(date => {
     const dateTime = new Date(date).getTime();
     
-    // Count completed points up to this date
     const completedByDate = sortedIssues
       .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
       .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
     
-    // Count scope (total points) added by this date
     const scopeByDate = sortedIssues
       .filter(issue => new Date(issue.created).getTime() <= dateTime)
       .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
     
-    completedPoints = completedByDate; // Update for the latest date
+    completedPoints = completedByDate;
     
     return { date, completed: completedByDate, scope: scopeByDate };
   });
 
-  // Calculate velocity based on completed issues
   const resolvedIssues = sortedIssues.filter(issue => issue.resolved);
   let velocity = 0;
+  let originalVelocity = 0;
   let projectedCompletionDate: Date | null = null;
   
   if (resolvedIssues.length > 0) {
-    // Sort resolved issues by resolved date
     const sortedResolved = [...resolvedIssues].sort((a, b) => 
       new Date(a.resolved!).getTime() - new Date(b.resolved!).getTime()
     );
     
-    // Get first and last resolved dates
     const firstResolvedDate = new Date(sortedResolved[0].resolved!);
     const lastResolvedDate = new Date(sortedResolved[sortedResolved.length - 1].resolved!);
     
-    // Calculate duration in days
     const durationDays = Math.max(1, (lastResolvedDate.getTime() - firstResolvedDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Calculate points completed per day
     const resolvedPoints = resolvedIssues.reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
-    velocity = resolvedPoints / durationDays;
+    originalVelocity = resolvedPoints / durationDays;
     
-    // Calculate remaining points
+    velocity = customVelocity !== undefined ? customVelocity : originalVelocity;
+    
     const remainingPoints = totalPoints - completedPoints;
     
-    // Calculate days to completion
-    // If customTeamMembers is provided and greater than 0, adjust velocity calculation
     let adjustedVelocity = velocity;
     const actualTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
     
-    // Scale velocity based on team size if we have customTeamMembers and actual team members
-    if (customTeamMembers !== undefined && assigneeMap.size > 0) {
+    if (customTeamMembers !== undefined && assigneeMap.size > 0 && customVelocity === undefined) {
       adjustedVelocity = velocity * (customTeamMembers / assigneeMap.size);
     }
     
-    // Calculate days to completion with adjusted velocity
     const daysToCompletion = adjustedVelocity > 0 ? Math.ceil(remainingPoints / adjustedVelocity) : 0;
     
-    // Calculate projected completion date if we have velocity
     if (adjustedVelocity > 0) {
       projectedCompletionDate = new Date();
       projectedCompletionDate.setDate(projectedCompletionDate.getDate() + daysToCompletion);
     }
   }
 
-  // Generate extended date labels for prediction
   let extendedDateLabels = [...dateLabels];
   if (projectedCompletionDate && !dateLabels.includes(projectedCompletionDate.toISOString().split('T')[0])) {
-    // Add projected completion date and any intermediate dates
     const lastDate = new Date(dateLabels[dateLabels.length - 1]);
-    const projectedDate = projectedCompletionDate; // Now a Date object
+    const projectedDate = projectedCompletionDate;
     
-    // Add intermediate dates (every 7 days)
     for (let d = new Date(lastDate); d <= projectedDate; d.setDate(d.getDate() + 7)) {
       const dateString = d.toISOString().split('T')[0];
       if (!extendedDateLabels.includes(dateString) && d < projectedDate) {
@@ -195,18 +177,15 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
       }
     }
     
-    // Add projected completion date
     extendedDateLabels.push(projectedCompletionDate.toISOString().split('T')[0]);
     extendedDateLabels.sort();
   }
   
-  // Create projected data points for burnup chart
   const projectedData: number[] = [];
   
   if (velocity > 0) {
-    // Get adjusted velocity for projection
     let adjustedVelocity = velocity;
-    if (customTeamMembers !== undefined && assigneeMap.size > 0) {
+    if (customTeamMembers !== undefined && assigneeMap.size > 0 && customVelocity === undefined) {
       adjustedVelocity = velocity * (customTeamMembers / assigneeMap.size);
     }
     
@@ -214,23 +193,19 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
       const currentDate = new Date(date);
       const lastKnownDate = new Date(dateLabels[dateLabels.length - 1]);
       
-      // For dates we have actual data
       if (currentDate <= lastKnownDate) {
-        projectedData.push(NaN); // Use NaN for dates where we have actual data
+        projectedData.push(NaN);
       } else {
-        // For future dates, calculate projected completion based on velocity
         const daysSinceLastKnown = (currentDate.getTime() - lastKnownDate.getTime()) / (1000 * 60 * 60 * 24);
         const projectedPoints = completedPoints + (adjustedVelocity * daysSinceLastKnown);
-        projectedData.push(Math.min(projectedPoints, totalPoints)); // Cap at total points
+        projectedData.push(Math.min(projectedPoints, totalPoints));
       }
     });
   }
 
-  // Generate data for burndown chart
   const burndownData = dateLabels.map(date => {
     const dateTime = new Date(date).getTime();
     
-    // Count remaining points after this date
     const completedByDate = sortedIssues
       .filter(issue => issue.resolved && new Date(issue.resolved).getTime() <= dateTime)
       .reduce((sum, issue) => sum + (issue.storyPoints || 1), 0);
@@ -240,13 +215,11 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     return { date, remaining: remainingPoints };
   });
 
-  // Convert assignee map to array for the response
   const assigneeData = Array.from(assigneeMap.entries()).map(([name, data]) => ({
     name,
     ...data
   }));
 
-  // Create assignee chart data - showing points per assignee
   const assigneeChartData: ChartData = {
     labels: assigneeData.map(a => a.name),
     datasets: [
@@ -263,7 +236,6 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     ]
   };
 
-  // Format for chart display with predictions
   const burnupChartData: ChartData = {
     labels: extendedDateLabels,
     datasets: [
@@ -307,16 +279,12 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     ],
   };
 
-  // Use customTeamMembers if provided, otherwise use the count from assigneeMap
   const effectiveTeamMembers = customTeamMembers !== undefined ? customTeamMembers : assigneeMap.size;
 
-  // 1. Cumulative Flow Chart Data
-  // Get all statuses
   const allStatuses = new Set<string>();
   sortedIssues.forEach(issue => allStatuses.add(issue.status));
   const statusList = Array.from(allStatuses);
   
-  // For each date, count issues in each status
   const cumulativeFlowData = dateLabels.map(date => {
     const dateTime = new Date(date).getTime();
     const statusCounts: Record<string, number> = {};
@@ -332,11 +300,9 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     return { date, ...statusCounts };
   });
   
-  // Format for chart display
   const cumulativeFlowChartData: ChartData = {
     labels: dateLabels,
     datasets: statusList.map((status, index) => {
-      // Generate a color based on the index
       const hue = (index * 137) % 360;
       const color = `hsla(${hue}, 70%, 60%, 0.7)`;
       
@@ -350,7 +316,6 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     }),
   };
   
-  // 2. Cycle Time Chart Data
   const cycleTimeData = resolvedIssues.map(issue => {
     const createdDate = new Date(issue.created);
     const resolvedDate = new Date(issue.resolved!);
@@ -371,23 +336,20 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
       data: cycleTimeData.map(d => ({
         x: d.resolvedDate,
         y: d.cycleTime,
-        r: Math.sqrt(d.storyPoints) * 5, // Size based on story points
+        r: Math.sqrt(d.storyPoints) * 5,
       })),
       backgroundColor: 'rgba(75, 192, 192, 0.6)',
     }],
   };
   
-  // 3. Velocity Chart Data
-  // Group by weeks or time periods for velocity
   const timePeriodsMap = new Map<string, number>();
   
   resolvedIssues.forEach(issue => {
     if (!issue.resolved) return;
     
-    // Group by week
     const resolvedDate = new Date(issue.resolved);
     const weekStart = new Date(resolvedDate);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Go to start of week (Sunday)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     const weekKey = weekStart.toISOString().split('T')[0];
     
     const points = issue.storyPoints || 1;
@@ -395,13 +357,11 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     timePeriodsMap.set(weekKey, currentPoints + points);
   });
   
-  // Convert to array and sort
   const velocityData = Array.from(timePeriodsMap.entries())
     .map(([date, points]) => ({ date, points }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
-  // Calculate moving average
-  const movingAverageWindow = 3; // 3-week moving average
+  const movingAverageWindow = 3;
   const movingAverages = velocityData.map((_, index, array) => {
     if (index < movingAverageWindow - 1) return null;
     
@@ -449,6 +409,7 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
     assigneeChartData,
     projectedCompletionDate,
     velocity,
+    originalVelocity,
     cumulativeFlow: cumulativeFlowChartData,
     cycleTime: cycleTimeChartData,
     velocityChart: velocityChartData
@@ -462,15 +423,12 @@ export const processJiraData = (issues: JiraIssue[], customTeamMembers?: number)
 export const validateJiraCSV = (data: any[]): boolean => {
   if (data.length === 0) return false;
   
-  // Check for required Jira fields in the first row
   const firstRow = data[0];
   const requiredFields = ['Summary', 'Issue key', 'Status', 'Created'];
   
-  // Count how many required fields exist in the CSV
   const foundFieldsCount = requiredFields.filter(field => 
     Object.keys(firstRow).some(key => key === field)
   ).length;
   
-  // If we found at least 3 of 4 required fields, consider it valid
   return foundFieldsCount >= 3;
 };

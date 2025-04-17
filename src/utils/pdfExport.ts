@@ -7,14 +7,15 @@ import { addSummaryMetricsToPdf, addAssigneeTableToPdf } from './pdf/pdfMetricsU
 
 export const generateFullReport = async (
   processedData: ProcessedData, 
-  customTeamMembers: number | null
+  customTeamMembers: number | null,
+  customVelocity?: number | null
 ): Promise<void> => {
   const { doc, pageWidth, margin, contentWidth, yPos: initialYPos } = initializePdfDocument();
   
   let yPos = initialYPos;
 
   // Add summary metrics
-  yPos = addSummaryMetricsToPdf(doc, processedData, customTeamMembers, margin, yPos);
+  yPos = addSummaryMetricsToPdf(doc, processedData, customTeamMembers, customVelocity, margin, yPos);
 
   // Add charts
   const chartIds = [
@@ -41,4 +42,3 @@ export const generateFullReport = async (
   addPageNumbersToPdf(doc);
   savePdfDocument(doc);
 };
-

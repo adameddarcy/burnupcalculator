@@ -14,19 +14,30 @@ export default function Index() {
   const [jiraData, setJiraData] = useState<JiraIssue[] | null>(null);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [customTeamMembers, setCustomTeamMembers] = useState<number | null>(null);
+  const [customVelocity, setCustomVelocity] = useState<number | null>(null);
 
   const handleDataLoaded = (data: JiraIssue[]) => {
     setJiraData(data);
     const processed = processJiraData(data);
     setProcessedData(processed);
     setCustomTeamMembers(null);
+    setCustomVelocity(null);
   };
 
   const handleTeamMembersChange = (teamMembers: number) => {
     setCustomTeamMembers(teamMembers);
     
     if (jiraData) {
-      const updatedProcessedData = processJiraData(jiraData, teamMembers);
+      const updatedProcessedData = processJiraData(jiraData, teamMembers, customVelocity || undefined);
+      setProcessedData(updatedProcessedData);
+    }
+  };
+
+  const handleVelocityChange = (velocity: number) => {
+    setCustomVelocity(velocity);
+    
+    if (jiraData) {
+      const updatedProcessedData = processJiraData(jiraData, customTeamMembers || undefined, velocity);
       setProcessedData(updatedProcessedData);
     }
   };
@@ -54,6 +65,8 @@ export default function Index() {
   const handleResetData = () => {
     setJiraData(null);
     setProcessedData(null);
+    setCustomTeamMembers(null);
+    setCustomVelocity(null);
   };
 
   const completionPercentage = processedData 
@@ -78,7 +91,9 @@ export default function Index() {
                 totalAssignees={processedData?.totalAssignees || 0}
                 projectedCompletionDate={processedData?.projectedCompletionDate || null}
                 velocity={processedData?.velocity}
+                originalVelocity={processedData?.originalVelocity}
                 onTeamMembersChange={handleTeamMembersChange}
+                onVelocityChange={handleVelocityChange}
               />
             </div>
 
