@@ -46,5 +46,13 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   fill: jest.fn(),
 }));
 
+// Make Jest globals available
+global.jest = jest;
+global.expect = expect;
+global.describe = describe;
+global.it = it;
+global.beforeEach = beforeEach;
+global.afterEach = afterEach;
+
 // Suppress console errors from Chart.js
 console.error = jest.fn();
