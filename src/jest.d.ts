@@ -10,6 +10,11 @@ declare global {
   const beforeEach: jest.Lifecycle;
   const afterEach: jest.Lifecycle;
   const jest: typeof import('jest');
+  
+  // Extend the Jest matchers with testing-library matchers
+  namespace jest {
+    interface Matchers<R> extends jest.Matchers<R>, import('@testing-library/jest-dom').TestingLibraryMatchers<R, any> {}
+  }
 }
 
 export {};
