@@ -1,15 +1,8 @@
+// jest.setup.cjs
 
-// Import jest-dom to add custom matchers
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
-// Make Jest globals available
-global.jest = jest;
-global.describe = describe;
-global.it = it;
-global.beforeEach = beforeEach;
-global.afterEach = afterEach;
-
-// Mock matchMedia for components that might use media queries
+// Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
@@ -24,15 +17,14 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock for requestAnimationFrame
-global.requestAnimationFrame = (callback) => {
+// requestAnimationFrame
+globalThis.requestAnimationFrame = (callback) => {
   setTimeout(callback, 0);
   return 0;
 };
 
-// Mock for canvas context (used by Chart.js)
+// Canvas mock
 HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
-  // Minimal mock of CanvasRenderingContext2D
   fillRect: jest.fn(),
   clearRect: jest.fn(),
   getImageData: jest.fn(() => ({
@@ -56,5 +48,5 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   fill: jest.fn(),
 }));
 
-// Suppress console errors from Chart.js
+// Suppress Chart.js console errors
 console.error = jest.fn();
