@@ -12,8 +12,8 @@ export * from '@testing-library/react';
 export { default as jest } from 'jest';
 export const describe = global.describe;
 export const it = global.it;
-// Use the correct approach to access expect
-export const expect = global.expect || jest.fn();
+// Instead of trying to access expect from global, import it directly from Jest
+export { expect } from '@jest/globals';
 export const beforeEach = global.beforeEach;
 export const afterEach = global.afterEach;
 
