@@ -2,6 +2,13 @@
 // Import jest-dom to add custom matchers
 import '@testing-library/jest-dom';
 
+// Make Jest globals available
+global.jest = jest;
+global.describe = describe;
+global.it = it;
+global.beforeEach = beforeEach;
+global.afterEach = afterEach;
+
 // Mock matchMedia for components that might use media queries
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -48,14 +55,6 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   arc: jest.fn(),
   fill: jest.fn(),
 }));
-
-// Make Jest globals available
-global.jest = jest;
-global.expect = expect;
-global.describe = describe;
-global.it = it;
-global.beforeEach = beforeEach;
-global.afterEach = afterEach;
 
 // Suppress console errors from Chart.js
 console.error = jest.fn();

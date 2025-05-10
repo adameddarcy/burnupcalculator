@@ -1,21 +1,22 @@
 
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-// Import jest-dom without trying to export it directly (it's not a module with exports)
+// Import jest-dom for matchers
 import '@testing-library/jest-dom';
+
+// Import expect from Jest
+import { expect } from '@jest/globals';
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
-// Don't try to re-export jest-dom as it's not a module with exports
 
-// Re-export Jest globals to make them available in test files
-export { default as jest } from 'jest';
+// Export Jest globals
+export { expect };
 export const describe = global.describe;
 export const it = global.it;
-// Instead of trying to access expect from global, import it directly from Jest
-export { expect } from '@jest/globals';
 export const beforeEach = global.beforeEach;
 export const afterEach = global.afterEach;
+export const jest = global.jest;
 
 // Custom render function to handle any providers if needed
 const customRender = (
