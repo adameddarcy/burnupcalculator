@@ -1,6 +1,7 @@
 
 // This file ensures TypeScript recognizes Jest globals
 import '@types/jest';
+import '@testing-library/jest-dom';
 
 declare global {
   const describe: jest.Describe;

@@ -1,4 +1,7 @@
 
+// Import jest-dom to add custom matchers
+import '@testing-library/jest-dom';
+
 // Mock matchMedia for components that might use media queries
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
